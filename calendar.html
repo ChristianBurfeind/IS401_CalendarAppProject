@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Student Scheduler</title>
+<style>
+:root{box-sizing:border-box;--bg:#eef1f6;--card:#fff;--ink:#14213d;--mut:#5d6b82;--pri:#002e5d;--on:#fff;--acc:#e8eef8;--line:#d5dbe6;--urg:#c62828;--std:#d98200;--flx:#2e7d32;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[data-theme=dark]{--bg:#0d1320;--card:#182236;--ink:#eaf0fb;--mut:#9aa8c2;--pri:#6fa3ef;--on:#0d1320;--acc:#223250;--line:#2c3b58}
+[data-theme=forest]{--pri:#1b5e3a;--acc:#e3f1e8;--bg:#eef3ef}
+[data-theme=plum]{--pri:#6a1b6e;--acc:#f1e5f2;--bg:#f4eef5}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--card);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}
+#app{display:grid;grid-template-columns:230px 1fr;grid-template-rows:auto 1fr;grid-template-areas:"top top" "nav main";height:100vh;background:var(--card)}
+.top{grid-area:top;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:12px 24px;border-bottom:1px solid var(--line)}
+.top h1{margin:0;font-size:22px;text-align:center}
+.ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--acc);color:var(--pri);font-size:16px;font-weight:700;border:0;cursor:pointer;overflow:hidden}
+.ic img,.av img{width:100%;height:100%;object-fit:cover}
+.main{grid-area:main;overflow:auto;min-height:0;padding:24px 24px 100px;padding-inline:max(24px,calc((100% - 1200px)/2))}
+#app[data-page=add] .main,#app[data-page=settings] .main,#app[data-page=profile] .main{padding-inline:max(24px,calc((100% - 640px)/2))}
+#app[data-page=todo] .main,#app[data-page=discovery] .main,#app[data-page=summary] .main{padding-inline:max(24px,calc((100% - 820px)/2))}
+#app .login{grid-column:1/-1;grid-row:1/-1;width:100%;max-width:420px;margin:auto;padding:24px;overflow:visible}
+.nav{grid-area:nav;display:flex;flex-direction:column;gap:4px;padding:16px 12px;border-right:1px solid var(--line)}
+.nav a{padding:12px 16px;border-radius:10px;font-size:15px;color:var(--mut);font-weight:600}.nav a:hover{background:var(--bg)}
+.nav a.on{color:var(--pri);background:var(--acc)}
+.fab{position:fixed;right:32px;bottom:28px;height:52px;padding:0 24px;border:0;border-radius:99px;background:var(--pri);color:var(--on);font:600 16px system-ui;cursor:pointer;box-shadow:0 4px 12px #0004}
+.seg{max-width:360px;display:flex;background:var(--acc);border-radius:10px;padding:3px;margin:2px 0 8px}
+.seg a{flex:1;text-align:center;padding:6px;border-radius:8px;font-weight:600;font-size:13px;color:var(--mut)}
+.seg a.on{background:var(--pri);color:var(--on)}
+.btn{display:block;width:100%;padding:12px;border:0;border-radius:12px;background:var(--pri);color:var(--on);font:600 15px system-ui;text-align:center;margin-top:10px;cursor:pointer}
+.btn.alt{background:var(--acc);color:var(--pri)}.btn.del{background:var(--urg);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+label{display:block;font-size:11px;font-weight:700;color:var(--mut);margin:10px 0 3px;text-transform:uppercase;letter-spacing:.04em}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+input[type=checkbox]{width:18px;height:18px;flex:none}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:14px 0 6px}
+.row{display:flex;gap:10px;align-items:center;padding:9px 12px;background:var(--bg);border-radius:12px;margin-bottom:6px;cursor:pointer}
+.row .t{flex:1;min-width:0}.row small{display:block;color:var(--mut)}.done .t{text-decoration:line-through;opacity:.5}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.p1{color:var(--urg)}.p2{color:var(--std)}.p3{color:var(--flx)}
+.nav2{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:8px}
+.nav2 button{width:34px;height:34px;border-radius:50%;border:0;background:var(--acc);color:var(--pri);font-size:18px;cursor:pointer}
+.add{padding:5px 12px;border:0;border-radius:99px;background:var(--pri);color:var(--on);font-size:12px;font-weight:700;cursor:pointer}
+.add:disabled{opacity:.5}
+.dg{display:grid;grid-template-columns:1fr 280px;gap:24px}
+.grid{position:relative;height:816px}
+.grid i{position:absolute;left:0;right:0;border-top:1px solid var(--line);font:normal 10px system-ui;color:var(--mut);height:48px}
+.ev{font-size:14px;position:absolute;left:54px;right:2px;padding:3px 7px;border-radius:8px;color:#fff;font-size:12px;font-weight:600;overflow:hidden;cursor:pointer}
+.sug{position:absolute;left:54px;right:2px;height:44px;padding:4px 7px;border:1.5px dashed var(--pri);border-radius:8px;font-size:11px;color:var(--pri);background:var(--card)}
+.sug button{float:right;margin-top:-2px}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;font-size:13px}
+.wk>div{background:var(--bg);border-radius:8px;min-height:480px;padding:8px;display:flex;flex-direction:column;gap:5px}
+.wk>div>b{text-align:center;font-size:14px;cursor:pointer}.wk .td{outline:2px solid var(--pri)}
+.wk span{border-radius:6px;padding:4px 6px;overflow:hidden;cursor:pointer;color:#fff;font-weight:600;word-break:break-word}
+.wk hr{width:100%;border:0;border-top:1px solid var(--line);margin:1px 0}
+.mo{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+.mo>b{font-size:11px;color:var(--mut)}
+.mo>div{min-height:104px;background:var(--bg);border-radius:10px;padding:6px;font-size:14px;font-weight:600;overflow:hidden;cursor:pointer}.mo .td{outline:2px solid var(--pri)}.mo .x{opacity:.4}
+.mo u{display:block;text-decoration:none;color:#fff;font-size:11px;font-weight:600;text-align:left;padding:2px 6px;border-radius:5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sw{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.sw select{width:120px}
+.tog{width:46px;height:26px;border-radius:99px;background:var(--line);position:relative;border:0;cursor:pointer;flex:none}
+.tog::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s}
+.tog.on{background:var(--pri)}.tog.on::after{left:23px}
+.av{width:88px;height:88px;border-radius:50%;background:var(--acc);display:grid;place-items:center;font-size:36px;color:var(--pri);margin:6px auto;overflow:hidden;font-weight:700}
+.kv{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}.kv span{color:var(--mut);font-weight:600}
+.chips{max-width:420px;display:flex;gap:6px;margin:8px 0}.chips button{flex:1;padding:7px 2px;border:0;border-radius:10px;background:var(--acc);color:var(--pri);font:600 12px system-ui;cursor:pointer}.chips .on{background:var(--pri);color:var(--on)}
+.ov{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.sheet{background:var(--card);width:100%;max-width:480px;border-radius:18px;padding:18px 20px 22px;box-shadow:0 20px 50px #0005}
+.sheet header{display:flex;justify-content:space-between;align-items:center}.sheet h3{margin:0}
+.rem{background:var(--acc);border-radius:12px;padding:8px 12px;margin-bottom:6px;color:var(--pri);font-size:13px;font-weight:600}
+.err{color:var(--urg);font-size:13px;min-height:18px;margin-top:6px}
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#1b2433;color:#fff;padding:8px 14px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:99;white-space:nowrap}
+@media(max-width:760px){#app{grid-template-columns:1fr;grid-template-areas:"top" "main" "nav"}.nav{flex-direction:row;border-right:0;border-top:1px solid var(--line);padding:6px}.nav a{flex:1;text-align:center;padding:10px 4px;font-size:13px}.fab{bottom:76px;right:16px}.dg{grid-template-columns:1fr}.top{padding:10px 12px}.wk{font-size:10px;gap:3px}.wk>div{padding:3px;min-height:340px}.mo>div{min-height:60px;font-size:12px}.mo u{height:5px;font-size:0;padding:0}}#toast.s{opacity:1}
+</style>
+</head>
+<body>
+<div id="app"></div><div id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* =====================================================================
+   SUPABASE SETUP  (the only thing you need to edit)
+   1. Supabase dashboard > Project Settings > API
+   2. Paste the Project URL and the anon/public key between the quotes.
+   Leave both empty to run in DEMO MODE (data saved in this browser only).
+   ===================================================================== */
+const SUPABASE_URL='';
+const SUPABASE_ANON_KEY='';
+/* ===================================================================== */
+const useSB=!!(SUPABASE_URL&&SUPABASE_ANON_KEY&&window.supabase);
+if(SUPABASE_URL&&!window.supabase)console.error('Supabase library failed to load; running in demo mode.');
+const sb=useSB?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
+const $=s=>document.querySelector(s);
+const T={school:['School','#3f6fd1'],work:['Work','#8e44ad'],church:['Church','#c2185b'],social:['Social','#d98200'],personal:['Personal','#1a9c8a'],career:['Career','#00838f']};
+const PS={1:'!!!',2:'!!',3:'!'},PN={1:'Urgent',2:'Standard',3:'Flexible'};
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const pd=s=>{const[a,b,c]=s.split('-');return new Date(+a,b-1,+c)};
+const ad=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return iso(d)};
+const L=(s,o)=>pd(s).toLocaleDateString('en-US',o);
+const t12=t=>{const[h,m]=t.split(':');return(h%12||12)+(m!=='00'?':'+m:'')+(h<12?' am':' pm')};
+const mins=t=>{const[h,m]=t.split(':');return h*60+ +m};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const TODAY=iso(new Date());
+let D=TODAY,E=null,AK='task',DR=null,PE=false,LM='in',F='all',Q='';
+const init=()=>({uid:null,interests:[],accounts:{},user:null,stay:false,items:[],linked:{},photo:'',set:{notif:true,view:'day',wk:1,theme:'royal',sug:true},prof:{name:'',school:'BYU',work:'',age:'',gender:''}});
+let S;if(useSB)S=init();else{try{S=JSON.parse(localStorage.getItem('sch2'))||init()}catch(e){S=init()}if(!S.stay)S.user=null}
+if(!S.interests)S.interests=['career','ai'];
+const save=()=>{if(useSB)return;try{localStorage.setItem('sch2',JSON.stringify(S))}catch(e){}};
+const uid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c=='x'?r:r&3|8).toString(16)});
+
+/* ============ DATA LAYER: every Supabase call lives here ============ */
+const fail=e=>{console.error(e);toast('Could not save: '+(e.message||e))};
+const q=async p=>{const r=await p;if(r.error)throw r.error;return r.data};
+const mail=u=>u.toLowerCase()+'@student-scheduler.app';
+const tm=t=>t?String(t).slice(0,5):'';
+async function dbItem(i){if(!useSB)return;try{
+ const b={id:i.id,user_id:S.uid,title:i.title,type:i.type,priority:i.pri,description:i.desc||'',source:i.src||null};
+ const row=i.kind=='task'?{...b,due_date:i.date,is_complete:!!i.done}:{...b,event_date:i.date,start_time:i.time||null,end_time:i.end||null,location:i.loc||''};
+ await q(sb.from(i.kind=='task'?'tasks':'events').upsert(row))}catch(e){fail(e)}}
+async function dbDel(i){if(!useSB)return;try{await q(sb.from(i.kind=='task'?'tasks':'events').delete().eq('id',i.id))}catch(e){fail(e)}}
+async function dbSettings(){if(!useSB)return;const t=S.set;try{await q(sb.from('settings').upsert({user_id:S.uid,notifications:t.notif,default_view:t.view,week_start:+t.wk,theme:t.theme,suggestions:t.sug}))}catch(e){fail(e)}}
+async function dbProfile(){if(!useSB)return;try{const p=S.prof,a=parseInt(p.age);
+ await q(sb.from('profiles').update({name:p.name,school:p.school,work:p.work,age:isNaN(a)?null:a,gender:p.gender,photo:S.photo||''}).eq('user_id',S.uid));
+ await q(sb.from('interests').delete().eq('user_id',S.uid));
+ if(S.interests.length)await q(sb.from('interests').insert(S.interests.map(interest=>({user_id:S.uid,interest}))))}catch(e){fail(e)}}
+async function dbLink(k,on){if(!useSB)return;try{
+ if(on)await q(sb.from('linked_accounts').upsert({user_id:S.uid,provider:k,is_linked:true}));
+ else{await q(sb.from('linked_accounts').delete().eq('user_id',S.uid).eq('provider',k));await q(sb.from('tasks').delete().eq('source',k));await q(sb.from('events').delete().eq('source',k))}}catch(e){fail(e)}}
+async function loadSB(){const id=S.uid;
+ const[p,st,t,e,i,l,d]=await Promise.all([q(sb.from('profiles').select('*').eq('user_id',id).maybeSingle()),q(sb.from('settings').select('*').eq('user_id',id).maybeSingle()),q(sb.from('tasks').select('*')),q(sb.from('events').select('*')),q(sb.from('interests').select('interest')),q(sb.from('linked_accounts').select('provider,is_linked')),q(sb.from('discovery_events').select('*'))]);
+ if(p){S.prof={name:p.name||'',school:p.school||'',work:p.work||'',age:p.age==null?'':String(p.age),gender:p.gender||''};S.photo=p.photo||''}
+ if(st)S.set={notif:st.notifications,view:st.default_view,wk:st.week_start,theme:st.theme,sug:st.suggestions};
+ const x=r=>({id:r.id,title:r.title,type:r.type,pri:r.priority,desc:r.description||'',src:r.source||undefined});
+ S.items=[...t.map(r=>({...x(r),kind:'task',date:r.due_date,time:'',end:'',loc:'',done:r.is_complete})),...e.map(r=>({...x(r),kind:'event',date:r.event_date,time:tm(r.start_time),end:tm(r.end_time),loc:r.location||'',done:false}))];
+ S.interests=i.map(r=>r.interest);S.linked={};l.forEach(r=>S.linked[r.provider]=r.is_linked);
+ const rows=d.map(r=>[r.title,Math.round((pd(r.event_date)-pd(TODAY))/864e5),tm(r.start_time),tm(r.end_time),r.category,r.location||'',r.description||'',0,r.tags||[]]).filter(c=>c[1]>=0);
+ if(rows.length)CAT=rows}
+async function startSession(session){S.uid=session.user.id;S.user=session.user.user_metadata?.username||session.user.email.split('@')[0];try{await loadSB()}catch(e){fail(e)}}
+async function logout(){if(useSB){try{await sb.auth.signOut()}catch(e){}S=init();localStorage.removeItem('sch_stay')}else{S.user=null;S.stay=false;save()}PE=false;go('login')}
+/* ===================================================================== */
+const on=d=>S.items.filter(i=>i.date===d);
+const byT=(a,b)=>mins(a.time)-mins(b.time),byP=(a,b)=>a.pri-b.pri;
+const tasks=d=>on(d).filter(i=>i.kind==='task').sort(byP),evs=d=>on(d).filter(i=>i.kind==='event').sort(byT);
+const go=h=>{location.hash=h;if(location.hash!=='#'+h)r()};
+function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('s');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('s'),1800)}
+function seed(){const t=TODAY,k=(kind,title,date,type,pri,time,end,loc)=>({id:uid(),kind,title,date,type,pri,time:time||'',end:end||'',loc:loc||'',desc:'',done:false});
+S.items.push(k('event','Class',t,'school',2,'08:00','09:30','JFSB'),k('event','Work',t,'work',2,'12:00','16:00','Campus'),k('event','Party',t,'social',3,'20:00','22:00'),k('task','Quiz 3',t,'school',1),k('task','Reading 4',t,'school',3),k('task','Submit time',t,'work',2),k('task','Grocery shop',t,'personal',3),k('task','Onboarding',ad(t,1),'work',2))}
+function shell(title,body,o={}){return`<div class="top">${o.left||'<a class="ic" href="#settings">☰</a>'}<h1>${title}</h1>${o.right||`<a class="ic" href="#profile">${S.photo?`<img src="${S.photo}" alt="">`:'👤'}</a>`}</div><div class="main">${body}</div>${o.fab?'<button class="fab" onclick="newItem()" aria-label="Add task or event">+ Add</button>':''}${o.nav?`<nav class="nav"><a class="${o.nav=='c'?'on':''}" href="#${S.set.view}">📅 Calendar</a><a class="${o.nav=='t'?'on':''}" href="#todo">✅ To-Do</a><a class="${o.nav=='d'?'on':''}" href="#discovery">🔎 Discovery</a></nav>`:''}`}
+const seg=v=>`<div class="seg">${['day','week','month'].map(x=>`<a class="${x==v?'on':''}" href="#${x}">${x[0].toUpperCase()+x.slice(1)}</a>`).join('')}</div>`;
+const newItem=(k)=>{E=null;DR=null;AK=location.hash==='#todo'?'task':'event';go('add')};
+function step(n,v){if(v=='day')D=ad(D,n);else if(v=='week')D=ad(D,7*n);else{const d=pd(D);d.setDate(1);d.setMonth(d.getMonth()+n);D=iso(d)}r()}
+const nv=(v,m)=>`<div class="nav2"><button onclick="step(-1,'${v}')" aria-label="Previous">‹</button><span>${m}</span><button onclick="step(1,'${v}')" aria-label="Next">›</button></div>`;
+const wkStart=d=>{const x=pd(d),df=(x.getDay()-S.set.wk+7)%7;return ad(d,-df)};
+const trow=i=>`<div class="row ${i.done?'done':''}"><input type="checkbox" ${i.done?'checked':''} onclick="event.stopPropagation();tog('${i.id}')"><span class="t" onclick="openEv('${i.id}')">${esc(i.title)}</span><b class="p${i.pri}" title="${PN[i.pri]}">${PS[i.pri]}</b></div>`;
+function tog(id){const i=S.items.find(x=>x.id==id);i.done=!i.done;save();dbItem(i);r()}
+function login(){const c=LM=='up';return`<div class="main login" style="display:flex;flex-direction:column;justify-content:center"><div class="av">👤</div><div class="seg"><a class="${c?'':'on'}" onclick="LM='in';r()">Log in</a><a class="${c?'on':''}" onclick="LM='up';r()">Create account</a></div>
+<label for="u">Username</label><input id="u" oninput="chk()" autocomplete="username"><label for="pw">Password</label><input id="pw" type="password" oninput="chk()" autocomplete="current-password">
+<div style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="st" ${S.stay?'checked':''}><span>Stay logged in</span></div><div class="err" id="er"></div>
+<button class="btn" id="go" disabled onclick="auth()">${c?'Create account':'Log in'}</button>${useSB?'':'<p style="text-align:center;color:var(--mut);font-size:12px">Demo mode: data is saved in this browser only. Add your Supabase URL and key at the top of the script to connect.</p>'}</div>`}
+function chk(){$('#go').disabled=!($('#u').value.trim()&&$('#pw').value)}
+async function auth(){const u=$('#u').value.trim(),p=$('#pw').value,btn=$('#go'),er=$('#er');er.textContent='';
+if(useSB){if(!/^[A-Za-z0-9._-]{3,30}$/.test(u))return er.textContent='Username: 3-30 letters, numbers, . _ -';btn.disabled=true;
+ try{let r;if(LM=='up'){r=await sb.auth.signUp({email:mail(u),password:p,options:{data:{username:u}}});if(r.error)throw r.error;
+  if(!r.data.session){btn.disabled=false;return er.textContent='Account created, but email confirmation is on. Turn off "Confirm email" in Supabase Auth settings, then log in.'}}
+ else{r=await sb.auth.signInWithPassword({email:mail(u),password:p});if(r.error)throw r.error}
+ localStorage.setItem('sch_stay',$('#st').checked?'1':'0');sessionStorage.setItem('sch_alive','1');
+ await startSession(r.data.session);D=TODAY;go('summary')}
+ catch(e){er.textContent=/already registered/i.test(e.message)?'That username is taken.':/invalid login/i.test(e.message)?'Incorrect username or password.':e.message;btn.disabled=false}
+ return}
+if(LM=='up'){if(S.accounts[u])return er.textContent='That username is taken.';S.accounts[u]=p;if(!S.items.length)seed();S.interests=['career','ai'];S.prof.name=S.prof.name||u}
+else if(S.accounts[u]!==p)return er.textContent='Incorrect username or password.';
+S.user=u;S.stay=$('#st').checked;save();D=TODAY;go('summary')}
+function summary(){const n=S.items.filter(i=>i.date===TODAY&&i.kind=='task'&&i.type=='school'&&!i.done).length,s=evs(TODAY).filter(e=>e.type=='social').length,now=new Date(),nm=now.getHours()*60+now.getMinutes();
+const rem=[];if(S.set.notif){S.items.forEach(i=>{if(i.done)return;if(i.kind=='task'&&i.type=='school'&&(i.date==TODAY||i.date==ad(TODAY,1)))rem.push(`📚 ${esc(i.title)} is due within 24 hours`);if(i.kind=='event'&&i.type=='social'&&i.date==TODAY&&mins(i.time)>nm&&mins(i.time)-nm<=240)rem.push(`🎉 ${esc(i.title)} starts in under 4 hours`)})}
+return shell(L(TODAY,{month:'short',day:'numeric'})+' Summary',`<div style="text-align:center;font-size:18px;line-height:1.7;margin:18px 0">You have <b class="p1">${n}</b> homework assignment${n==1?'':'s'} due.<br>You have <b class="p2">${s}</b> social ${s==1?'activity':'activities'} today.</div>
+${rem.length?`<h2>Reminders</h2>${rem.map(x=>`<div class="rem">${x}</div>`).join('')}`:''}<h2>Today's schedule</h2>${evs(TODAY).map(e=>evRow(e)).join('')||'<small>No events today.</small>'}<h2>Today's tasks</h2>${tasks(TODAY).map(trow).join('')||'<small>No tasks today.</small>'}`,{nav:'c',fab:1})}
+const evRow=e=>`<div class="row" onclick="openEv('${e.id}')"><span class="dot" style="background:${T[e.type][1]}"></span><span class="t"><b>${esc(e.title)}</b><small>${t12(e.time)}${e.end?'–'+t12(e.end):''}${e.loc?' · '+esc(e.loc):''}</small></span></div>`;
+function day(){const ev=evs(D);let g='';for(let h=6;h<=22;h++)g+=`<i style="top:${(h-6)*48}px">${t12(h+':00')}</i>`;
+const blk=e=>{const s=mins(e.time),en=e.end?mins(e.end):s+60;return`<div class="ev" style="top:${(s-360)/60*48+1}px;height:${Math.max(24,(en-s)/60*48-3)}px;background:${T[e.type][1]}" onclick="openEv('${e.id}')">${esc(e.title)}<br><small>${t12(e.time)}</small></div>`};
+const free=h=>!ev.some(e=>{const s=mins(e.time),en=e.end?mins(e.end):s+60;return s<h*60+60&&en>h*60});
+const sg=!S.set.sug?'':(free(12)?`<div class="sug" style="top:${6*48+2}px">🍽 Lunch: Café Rio, 0.3 mi<button class="add" onclick="addSug('Lunch at Café Rio','12:00','13:00','personal')">Add</button></div>`:'')+(free(19)?`<div class="sug" style="top:${13*48+2}px">⚽ BYU Soccer Game, 7 pm<button class="add" onclick="addSug('BYU Soccer Game','19:00','21:00','social')">Add</button></div>`:'');
+return shell(L(D,{weekday:'short',month:'short',day:'numeric'}),seg('day')+nv('day','Day view')+`<div class="dg"><div class="grid">${g}${sg}${ev.map(blk).join('')}</div><div><h2 style="margin-top:0">To-Do</h2>${tasks(D).map(t=>`<div class="row ${t.done?'done':''}" style="padding:6px"><input type="checkbox" ${t.done?'checked':''} onclick="tog('${t.id}')"><span class="t" style="font-size:12px" onclick="openEv('${t.id}')">${esc(t.title)}</span></div>`).join('')||'<small>Nothing due.</small>'}</div></div>`,{nav:'c',fab:1})}
+function addSug(title,a,b,type){const it={id:uid(),kind:'event',title,date:D,time:a,end:b,type,pri:3,loc:'',desc:'',done:false};S.items.push(it);dbItem(it);save();toast('Added to your calendar');r()}
+function week(){const s=wkStart(D),days=[...Array(7)].map((_,i)=>ad(s,i));
+return shell(L(s,{month:'short',day:'numeric'})+' – '+L(days[6],{month:'short',day:'numeric'}),seg('week')+nv('week','Week view')+`<div class="wk">${days.map(d=>`<div class="${d==TODAY?'td':''}"><b onclick="D='${d}';go('day')">${L(d,{weekday:'narrow'})}<br>${pd(d).getDate()}</b>${tasks(d).map(t=>`<span style="background:${T[t.type][1]};${t.done?'opacity:.4;text-decoration:line-through':''}" onclick="openEv('${t.id}')">${PS[t.pri]} ${esc(t.title)}</span>`).join('')}<hr>${evs(d).map(e=>`<span style="background:${T[e.type][1]}" onclick="openEv('${e.id}')">${t12(e.time)}<br>${esc(e.title)}</span>`).join('')}</div>`).join('')}</div><p style="font-size:11px;color:var(--mut)">Tasks (by priority) sit above events. Tap a day to open it.</p>`,{nav:'c',fab:1})}
+function month(){const f=pd(D);f.setDate(1);const st=wkStart(iso(f)),cells=[...Array(42)].map((_,i)=>ad(st,i)),hd=[...Array(7)].map((_,i)=>L(ad(st,i),{weekday:'narrow'}));
+return shell(L(iso(f),{month:'long',year:'numeric'}),seg('month')+nv('month','Month view')+`<div class="mo">${hd.map(h=>`<b>${h}</b>`).join('')}${cells.slice(0,cells.slice(35).some(d=>pd(d).getMonth()==f.getMonth())?42:35).map(d=>{const it=on(d);return`<div class="${pd(d).getMonth()!=f.getMonth()?'x':''} ${d==TODAY?'td':''}" onclick="D='${d}';go('day')">${pd(d).getDate()}${it.slice(0,3).map(i=>`<u style="background:${T[i.type][1]}">${esc(i.title)}</u>`).join('')}${it.length>3?`<small>+${it.length-3}</small>`:''}</div>`}).join('')}</div>`,{nav:'c',fab:1})}
+function todo(){const ts=tasks(D);return shell('To-Do',`<div class="nav2"><button onclick="D=ad(D,-1);r()" aria-label="Previous day">‹</button><span>${L(D,{weekday:'short',month:'short',day:'numeric'})}</span><button onclick="D=ad(D,1);r()" aria-label="Next day">›</button></div>`+Object.keys(T).filter(k=>ts.some(t=>t.type==k)).map(k=>`<h2>${T[k][0]}</h2>${ts.filter(t=>t.type==k).map(trow).join('')}`).join('')+(ts.length?'':'<p style="text-align:center;color:var(--mut)">No tasks for this day. Tap + to add one.</p>'),{nav:'t',fab:1})}
+const val=(k,d)=>DR?DR[k]:d;
+function addf(){const it=E?S.items.find(i=>i.id==E):null;if(!DR)DR=it?{...it}:{title:'',date:D,time:'12:00',end:'13:00',loc:'',type:'school',pri:2,desc:''};if(it)AK=it.kind;const ev=AK=='event';
+return shell((it?'Edit ':'Add ')+(ev?'Event':'Task'),`${it?'':`<div class="seg"><a class="${ev?'':'on'}" onclick="rd();AK='task';r()">Task</a><a class="${ev?'on':''}" onclick="rd();AK='event';r()">Event</a></div>`}
+<label>Title</label><input id="f-title" value="${esc(DR.title)}"><label>Date</label><input id="f-date" type="date" value="${DR.date}">
+${ev?`<div style="display:flex;gap:8px"><div style="flex:1"><label>Start</label><input id="f-time" type="time" value="${DR.time||'12:00'}"></div><div style="flex:1"><label>End</label><input id="f-end" type="time" value="${DR.end||'13:00'}"></div></div><label>Location</label><input id="f-loc" value="${esc(DR.loc)}">`:''}
+<label>Type</label><select id="f-type">${Object.keys(T).map(k=>`<option value="${k}" ${DR.type==k?'selected':''}>${T[k][0]}</option>`).join('')}</select>
+<label>Priority</label><select id="f-pri">${[1,2,3].map(p=>`<option value="${p}" ${DR.pri==p?'selected':''}>${p} · ${PN[p]} ${PS[p]}</option>`).join('')}</select>
+<label>Description</label><textarea id="f-desc" rows="2">${esc(DR.desc)}</textarea><div class="err" id="er"></div><button class="btn" onclick="saveItem()">${it?'Save changes':'Add'}</button>`,{left:'<button class="ic" onclick="DR=null;E=null;history.length>1?history.back():go(\'summary\')" aria-label="Close">✕</button>',right:'<span></span>'})}
+function rd(){const g=i=>$('#f-'+i)?.value;DR={...DR,title:g('title')??DR.title,date:g('date')||DR.date,time:g('time')??DR.time,end:g('end')??DR.end,loc:g('loc')??DR.loc,type:g('type')||DR.type,pri:+g('pri')||DR.pri,desc:g('desc')??DR.desc}}
+function saveItem(){rd();if(!DR.title.trim())return $('#er').textContent='Please enter a title.';if(!DR.date)return $('#er').textContent='Please choose a date.';
+const ev=AK=='event';if(ev&&DR.end&&mins(DR.end)<=mins(DR.time))return $('#er').textContent='End time must be after start time.';
+const o={...DR,title:DR.title.trim(),kind:ev?'event':'task'};if(!ev){o.time='';o.end='';o.loc=''}
+let it;if(E){const i=S.items.findIndex(x=>x.id==E);S.items[i]={...S.items[i],...o};it=S.items[i]}else{it={...o,id:uid(),done:false};S.items.push(it)}dbItem(it);
+D=o.date;E=null;DR=null;save();toast(ev?'Event added to calendar':'Task added');go(ev?'day':'todo')}
+function openEv(id){const i=S.items.find(x=>x.id==id),k=(a,b)=>b?`<div class="kv"><span>${a}</span><b>${b}</b></div>`:'';
+const o=document.createElement('div');o.className='ov';o.onclick=e=>{if(e.target==o)o.remove()};
+o.innerHTML=`<div class="sheet"><header><h3>${i.kind=='task'?'Task':'Event'} details</h3><button class="ic" onclick="this.closest('.ov').remove()" aria-label="Close">✕</button></header>${k('Title',esc(i.title))}${k('Date',L(i.date,{month:'short',day:'numeric',year:'numeric'}))}${i.kind=='event'?k('Time',t12(i.time)+(i.end?' – '+t12(i.end):''))+k('Location',esc(i.loc)):''}${k('Type',T[i.type][0])}${k('Priority',`<span class="p${i.pri}">${i.pri} · ${PN[i.pri]}</span>`)}${k('Description',esc(i.desc))}
+<div style="display:flex;gap:8px"><button class="btn alt" onclick="E='${i.id}';DR=null;go('add')">✎ Edit</button><button class="btn del" onclick="delItem('${i.id}')">Delete</button></div></div>`;$('#app').appendChild(o)}
+function delItem(id){const d=S.items.find(i=>i.id==id);if(d)dbDel(d);S.items=S.items.filter(i=>i.id!=id);save();toast('Deleted');r()}
+let CAT=[['IS Career Fair',1,'13:00','15:00','career','Wilk Ballroom','Meet employers hiring IS majors.',0,['career','business']],['AI in Business Club',3,'19:00','20:00','career','TNRB 150','Guest speaker on AI in industry.',0,['career','ai']],['BYU Soccer Game',0,'19:00','21:00','social','South Field','Home match under the lights.',0,['sports','social']],['Resume Workshop',2,'16:00','17:00','career','Career Center','Polish your resume for recruiters.',0,['career']],['Campus Devotional',2,'11:00','12:00','school','Marriott Center','Weekly campus devotional.',0,['faith']],['Study Skills Seminar',4,'12:00','13:00','school','Library 3rd Floor','Midterm prep strategies.',0,['school']],['Ward Game Night',5,'19:30','21:30','social','Stake Center','Board games and snacks.',0,['social','games']]];
+const fy=c=>(c[8]||[]).some(t=>S.interests.includes(t));
+function disc(){const q=Q.toLowerCase(),L2=CAT.filter(c=>(F=='all'||c[4]==F)&&(!q||(c[0]+c[6]).toLowerCase().includes(q))).sort((a,b)=>a[1]-b[1]||mins(a[2])-mins(b[2]));
+const row=c=>{const d=ad(TODAY,c[1]),has=S.items.some(i=>i.title==c[0]&&i.date==d);return`<div class="row" style="cursor:default"><div class="t"><b>${c[0]}</b><small>${c[1]==0?'Today':L(d,{weekday:'long',month:'short',day:'numeric'})} · ${t12(c[2])}–${t12(c[3])}</small><small>${c[6]}</small></div><button class="add" ${has?'disabled':''} onclick="addDisc(${CAT.indexOf(c)})">${has?'✓ Added':'ADD'}</button></div>`};
+return shell('Discovery',`<input id="q" placeholder="🔍 Search events" value="${esc(Q)}" oninput="Q=this.value;const p=this.selectionStart;r();$('#q').focus();$('#q').setSelectionRange(p,p)"><div class="chips">${[['all','All'],['school','School'],['social','Social'],['career','Career']].map(([k,n])=>`<button class="${F==k?'on':''}" onclick="F='${k}';r()">${n}</button>`).join('')}</div>
+${L2.some(fy)?`<h2>For You</h2>${L2.filter(fy).map(row).join('')}<h2>Other Events</h2>`:'<h2>Events</h2>'}${L2.filter(c=>!fy(c)).map(row).join('')}${L2.length?'':'<p style="text-align:center;color:var(--mut)">No events match.</p>'}`,{nav:'d'})}
+function addDisc(i){const c=CAT[i],it={id:uid(),kind:'event',title:c[0],date:ad(TODAY,c[1]),time:c[2],end:c[3],loc:c[5],type:c[4],pri:2,desc:c[6],done:false};S.items.push(it);dbItem(it);save();toast('Added to your calendar');r()}
+const tgl=(k)=>`<button class="tog ${S.set[k]?'on':''}" role="switch" aria-checked="${!!S.set[k]}" onclick="setS('${k}',!S.set.${k})"></button>`;
+const sel=(k,o)=>`<select onchange="setS('${k}',this.value)">${o.map(([v,n])=>`<option value="${v}" ${S.set[k]==v?'selected':''}>${n}</option>`).join('')}</select>`;
+function setS(k,v){S.set[k]=k=='wk'?+v:v;save();dbSettings();if(k=='notif')toast(v?'Notifications on':'Notifications off');r()}
+function sett(){return shell('Settings',`<div class="sw">Notifications ${tgl('notif')}</div><div class="sw">Default view ${sel('view',[['day','Day'],['week','Week'],['month','Month']])}</div><div class="sw">Week starts on ${sel('wk',[[1,'Monday'],[0,'Sunday']])}</div><div class="sw">Theme ${sel('theme',[['royal','Royal'],['dark','Dark'],['forest','Forest'],['plum','Plum']])}</div><div class="sw">In-calendar suggestions ${tgl('sug')}</div><p style="color:var(--mut);font-size:12px">Reminders: homework due within 24 hours and social events within 4 hours show on your Summary page.</p>`,{nav:'c',left:'<button class="ic" onclick="history.length>1?history.back():go(\'summary\')" aria-label="Back">‹</button>'})}
+function prof(){const p=S.prof,L3=[['canvas','Canvas Account'],['workday','Workday'],['other','Other Calendar']];
+const body=PE?`<div class="av" onclick="$('#ph').click()" style="cursor:pointer">${S.photo?`<img src="${S.photo}" alt="">`:'📷'}</div><input type="file" id="ph" accept="image/*" hidden onchange="photo(this)">${['name','school','work','age','gender'].map(k=>`<label>${k}</label><input id="p-${k}" value="${esc(p[k])}">`).join('')}<label>interests (comma-separated)</label><input id="p-interests" value="${esc(S.interests.join(', '))}"><button class="btn" onclick="saveP()">Save profile</button><button class="btn alt" onclick="PE=false;r()">Cancel</button>`
+:`<div class="av">${S.photo?`<img src="${S.photo}" alt="">`:esc((p.name||'?')[0].toUpperCase())}</div>${['name','school','work','age','gender'].map(k=>`<div class="kv"><span>${k[0].toUpperCase()+k.slice(1)}</span><b>${esc(p[k])||'—'}</b></div>`).join('')}<div class="kv"><span>Interests</span><b>${esc(S.interests.join(', '))||'—'}</b></div>${L3.map(([k,n])=>`<button class="btn alt" onclick="link('${k}')">${S.linked[k]?'✓ '+n+' linked (tap to unlink)':'Link '+n}</button>`).join('')}<button class="btn del" onclick="logout()">Log out</button>`;
+return shell('Profile',body,{left:'<button class="ic" onclick="PE=false;go(S.set.view)" aria-label="Back">‹</button>',right:PE?'<span></span>':'<button class="ic" onclick="PE=true;r()" aria-label="Edit profile">✎</button>'})}
+function saveP(){['name','school','work','age','gender'].forEach(k=>S.prof[k]=$('#p-'+k).value.trim());S.interests=[...new Set($('#p-interests').value.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean))];PE=false;save();dbProfile();toast('Profile saved');r()}
+function photo(inp){const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d'),s=Math.min(im.width,im.height);x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,160,160);S.photo=c.toDataURL('image/jpeg',.8);save();dbProfile();r()};im.src=rd.result};rd.readAsDataURL(f)}
+function link(k){if(S.linked[k]){S.linked[k]=false;S.items=S.items.filter(i=>i.src!=k);dbLink(k,false);toast('Unlinked');}else{S.linked[k]=true;const m=(o)=>{const it={id:uid(),desc:'Imported',loc:'',time:'',end:'',done:false,src:k,...o};S.items.push(it);dbItem(it)};
+if(k=='canvas'){m({kind:'task',title:'IS 402 Homework',date:ad(TODAY,1),type:'school',pri:1});m({kind:'task',title:'IS 401 Discussion Post',date:ad(TODAY,3),type:'school',pri:2})}
+if(k=='workday'){m({kind:'event',title:'Work Shift',date:ad(TODAY,2),time:'13:00',end:'17:00',type:'work',pri:2,loc:'Campus'})}
+if(k=='other'){m({kind:'event',title:'Dentist',date:ad(TODAY,4),time:'10:00',end:'11:00',type:'personal',pri:2,loc:'Provo'})}
+toast('Linked: imported items added');dbLink(k,true)}save();r()}
+function r(){let h=(location.hash||'#login').slice(1);if(!S.user)h='login';if(h=='login'&&S.user)h='summary';
+const f={login,summary,day,week,month,todo,add:addf,discovery:disc,settings:sett,profile:prof}[h]||summary;
+document.documentElement.dataset.theme=S.set.theme;$('#app').dataset.page=h;$('#app').innerHTML=f()}
+addEventListener('hashchange',r);
+(async function boot(){
+$('#app').innerHTML='<div class="main login"><p style="text-align:center;color:var(--mut)">Loading…</p></div>';
+if(useSB){try{const{data:{session}}=await sb.auth.getSession();
+ if(session&&localStorage.getItem('sch_stay')!=='1'&&!sessionStorage.getItem('sch_alive'))await sb.auth.signOut();
+ else if(session){sessionStorage.setItem('sch_alive','1');await startSession(session)}}catch(e){console.error(e)}}
+if(!S.user&&location.hash!=='#login')history.replaceState(null,'','#login');
+r()})();
+</script>
+</body>
+</html>
