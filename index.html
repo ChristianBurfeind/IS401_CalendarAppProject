@@ -91,6 +91,8 @@ const SUPABASE_ANON_KEY='';
 /* ===================================================================== */
 const useSB=!!(SUPABASE_URL&&SUPABASE_ANON_KEY&&window.supabase);
 if(SUPABASE_URL&&!window.supabase)console.error('Supabase library failed to load; running in demo mode.');
+let DEMO=false;
+const live=()=>useSB&&!DEMO;
 const sb=useSB?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}}):null;
 const $=s=>document.querySelector(s);
 const T={school:['School','#3f6fd1'],work:['Work','#8e44ad'],church:['Church','#c2185b'],social:['Social','#d98200'],personal:['Personal','#1a9c8a'],career:['Career','#00838f']};
@@ -107,7 +109,7 @@ let D=TODAY,E=null,AK='task',DR=null,PE=false,LM='in',F='all',Q='';
 const init=()=>({uid:null,interests:[],accounts:{},user:null,stay:false,items:[],linked:{},photo:'',set:{notif:true,view:'day',wk:1,theme:'royal',sug:true},prof:{name:'',school:'BYU',work:'',age:'',gender:''}});
 let S;if(useSB)S=init();else{try{S=JSON.parse(localStorage.getItem('sch2'))||init()}catch(e){S=init()}if(!S.stay)S.user=null}
 if(!S.interests)S.interests=['career','ai'];
-const save=()=>{if(useSB)return;try{localStorage.setItem('sch2',JSON.stringify(S))}catch(e){}};
+const save=()=>{if(useSB||DEMO)return;try{localStorage.setItem('sch2',JSON.stringify(S))}catch(e){}};
 const uid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c=='x'?r:r&3|8).toString(16)});
 
 /* ============ DATA LAYER: every Supabase call lives here ============
@@ -150,7 +152,7 @@ async function resolveSchema(){const out={},probs=[];
   if(!r.map)probs.push('Table "'+def.t+'" is not usable ('+r.why+')');
   else{out[k]=r.map;if(r.miss.length)probs.push('Table "'+r.map.t+'" needs column(s): '+r.miss.join(', '))}}));
  M=out;DBERR=probs}
-async function dbItem(it){if(!useSB)return;
+async function dbItem(it){if(!live())return;
  try{if(it._p)await it._p;
   it._p=(async()=>{const task=it.kind=='task',B=M[task?'tasks':'events'],ts=t=>t?it.date+'T'+t+':00':null;
    const row=task?mk('tasks',{uid:S.uid,title:it.title,date:it.date,type:it.type,pri:String(it.pri),desc:it.desc||'',rep:false})
@@ -160,21 +162,21 @@ async function dbItem(it){if(!useSB)return;
    if(task){const TD=M.todo,r2=await q(sb.from(TD.t).update({[TD.done]:!!it.done}).eq(TD.id,it.rid).select());
     if(!r2.length)await q(sb.from(TD.t).insert(mk('todo',{id:it.rid,done:!!it.done})))}})();
   await it._p}catch(e){fail(e)}}
-async function dbDel(it){if(!useSB)return;try{if(it._p)await it._p;if(!it.rid)return;const B=M[it.kind=='task'?'tasks':'events'];
+async function dbDel(it){if(!live())return;try{if(it._p)await it._p;if(!it.rid)return;const B=M[it.kind=='task'?'tasks':'events'];
  if(it.kind=='task')await q(sb.from(M.todo.t).delete().eq(M.todo.id,it.rid));
  await q(sb.from(B.t).delete().eq(B.id,it.rid))}catch(e){fail(e)}}
-async function dbSettings(){if(!useSB)return;try{localStorage.setItem('sch_notif_'+S.uid,S.set.notif?'1':'0');
+async function dbSettings(){if(!live())return;try{localStorage.setItem('sch_notif_'+S.uid,S.set.notif?'1':'0');
  const B=M.settings,row=mk('settings',{view:S.set.view,week:+S.set.wk==0?'Sunday':'Monday',theme:S.set.theme,sug:!!S.set.sug});
  const r=await q(sb.from(B.t).update(row).eq(B.uid,S.uid).select());if(!r.length)await q(sb.from(B.t).insert({...row,[B.uid]:S.uid}))}catch(e){fail(e)}}
-async function dbProfile(np,ints){if(!useSB)return true;try{const U=M.users;
+async function dbProfile(np,ints){if(!live())return true;try{const U=M.users;
  if(np.name!==S.prof.name){const x=await q(sb.from(U.t).select(qc(U.id)).eq(U.name,np.name).neq(U.id,S.uid).limit(1));if(x.length)throw new Error('That name is already taken.')}
  const a=parseInt(np.age);
  await q(sb.from(U.t).update(mk('users',{name:np.name,school:np.school,work:np.work,age:isNaN(a)?null:a,gender:np.gender})).eq(U.id,S.uid));
  const I=M.interests;await q(sb.from(I.t).delete().eq(I.uid,S.uid));
  if(ints.length)await q(sb.from(I.t).insert(ints.map(v=>mk('interests',{uid:S.uid,val:v}))));
  S.user=np.name;return true}catch(e){fail(e);return false}}
-const lsPhoto=()=>{if(useSB)try{localStorage.setItem('sch_photo_'+S.uid,S.photo)}catch(e){}};
-function dbLink(k,on){if(!useSB)return;try{localStorage.setItem('sch_linked_'+S.uid,JSON.stringify(S.linked))}catch(e){}}
+const lsPhoto=()=>{if(live())try{localStorage.setItem('sch_photo_'+S.uid,S.photo)}catch(e){}};
+function dbLink(k,on){if(!live())return;try{localStorage.setItem('sch_linked_'+S.uid,JSON.stringify(S.linked))}catch(e){}}
 async function loadSB(){const id=S.uid,MU=M.users,MS=M.settings,MI=M.interests,MT=M.tasks,ME=M.events,MD=M.todo;
  const[u,se,ints,ts,es]=await Promise.all([q(sb.from(MU.t).select('*').eq(MU.id,id).limit(1)),q(sb.from(MS.t).select('*').eq(MS.uid,id).limit(1)),q(sb.from(MI.t).select('*').eq(MI.uid,id)),q(sb.from(MT.t).select('*').eq(MT.uid,id)),q(sb.from(ME.t).select('*').eq(ME.uid,id))]);
  const tds=ts.length?await q(sb.from(MD.t).select('*').in(MD.id,ts.map(r=>r[MT.id]))):[];
@@ -188,8 +190,9 @@ async function loadSB(){const id=S.uid,MU=M.users,MS=M.settings,MI=M.interests,M
  S.items=[...ts.map(r=>({id:'t'+r[MT.id],rid:r[MT.id],kind:'task',title:r[MT.title],date:dd(r[MT.date]),time:'',end:'',loc:'',type:ty(r[MT.type]),pri:+r[MT.pri]||2,desc:r[MT.desc]||'',done:!!done[r[MT.id]],src:srcOf(r[MT.desc]||'')})),
   ...es.map(r=>({id:'e'+r[ME.id],rid:r[ME.id],kind:'event',title:r[ME.title],date:dd(r[ME.date])||dd(r[ME.start]),time:tt(r[ME.start]),end:tt(r[ME.end]),loc:r[ME.loc]||'',type:ty(r[ME.type]),pri:+r[ME.pri]||2,desc:r[ME.desc]||'',done:false,src:srcOf(r[ME.desc]||'')}))].filter(i=>i.date);
  S.interests=ints.map(r=>r[MI.val])}
+function startDemo(){DEMO=true;S=init();S.user='Demo';S.stay=false;S.prof.name='Demo User';S.interests=['career','ai'];seed();D=TODAY;toast('Demo mode: nothing is saved');go('summary')}
 async function startSession(id,name){S.uid=id;S.user=name;try{await loadSB()}catch(e){fail(e)}}
-async function logout(){if(useSB){localStorage.removeItem('sch_login');sessionStorage.removeItem('sch_login');S=init()}else{S.user=null;S.stay=false;save()}PE=false;go('login')}
+async function logout(){if(DEMO){location.hash='#login';location.reload();return}if(useSB){localStorage.removeItem('sch_login');sessionStorage.removeItem('sch_login');S=init()}else{S.user=null;S.stay=false;save()}PE=false;go('login')}
 /* ===================================================================== */
 const on=d=>S.items.filter(i=>i.date===d);
 const byT=(a,b)=>mins(a.time)-mins(b.time),byP=(a,b)=>a.pri-b.pri;
@@ -209,7 +212,7 @@ function tog(id){const i=S.items.find(x=>x.id==id);i.done=!i.done;save();dbItem(
 function login(){const c=LM=='up';return`<div class="main login" style="display:flex;flex-direction:column;justify-content:center"><div class="av">👤</div>${DBERR.length?`<div class="rem" style="background:#fde8e8;color:#8a1c1c;font-weight:500"><b>Your Supabase tables need a quick fix:</b><br>${DBERR.map(esc).join('<br>')}<br><br>Run <b>setup.sql</b> once in the Supabase SQL Editor, then reload this page.</div>`:''}<div class="seg"><a class="${c?'':'on'}" onclick="LM='in';r()">Log in</a><a class="${c?'on':''}" onclick="LM='up';r()">Create account</a></div>
 <label for="u">Username</label><input id="u" oninput="chk()" autocomplete="username"><label for="pw">Password</label><input id="pw" type="password" oninput="chk()" autocomplete="current-password">
 <div style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="st" ${S.stay?'checked':''}><span>Stay logged in</span></div><div class="err" id="er"></div>
-<button class="btn" id="go" disabled onclick="auth()">${c?'Create account':'Log in'}</button>${useSB?'':'<p style="text-align:center;color:var(--mut);font-size:12px">Demo mode: data is saved in this browser only. Add your Supabase URL and key at the top of the script to connect.</p>'}</div>`}
+<button class="btn" id="go" disabled onclick="auth()">${c?'Create account':'Log in'}</button><button class="btn alt" onclick="startDemo()">Try demo (no login)</button>${useSB?'':'<p style="text-align:center;color:var(--mut);font-size:12px">Demo mode: data is saved in this browser only. Add your Supabase URL and key at the top of the script to connect.</p>'}</div>`}
 function chk(){$('#go').disabled=!($('#u').value.trim()&&$('#pw').value)}
 async function auth(){const u=$('#u').value.trim(),p=$('#pw').value,btn=$('#go'),er=$('#er');er.textContent='';
 if(useSB){if(DBERR.length)return er.textContent='Fix the database setup first (see the box above).';btn.disabled=true;
