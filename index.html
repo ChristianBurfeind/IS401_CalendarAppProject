@@ -91,7 +91,7 @@ const SUPABASE_ANON_KEY='';
 /* ===================================================================== */
 const useSB=!!(SUPABASE_URL&&SUPABASE_ANON_KEY&&window.supabase);
 if(SUPABASE_URL&&!window.supabase)console.error('Supabase library failed to load; running in demo mode.');
-const sb=useSB?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
+const sb=useSB?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}}):null;
 const $=s=>document.querySelector(s);
 const T={school:['School','#3f6fd1'],work:['Work','#8e44ad'],church:['Church','#c2185b'],social:['Social','#d98200'],personal:['Personal','#1a9c8a'],career:['Career','#00838f']};
 const PS={1:'!!!',2:'!!',3:'!'},PN={1:'Urgent',2:'Standard',3:'Flexible'};
@@ -110,35 +110,86 @@ if(!S.interests)S.interests=['career','ai'];
 const save=()=>{if(useSB)return;try{localStorage.setItem('sch2',JSON.stringify(S))}catch(e){}};
 const uid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c=='x'?r:r&3|8).toString(16)});
 
-/* ============ DATA LAYER: every Supabase call lives here ============ */
-const fail=e=>{console.error(e);toast('Could not save: '+(e.message||e))};
+/* ============ DATA LAYER: every Supabase call lives here ============
+   Table/column names below follow your ERD. At startup the app checks them against
+   your real Supabase tables and adapts to upper/lower-case differences automatically. */
+const ERD={
+ users:{t:'User',id:'User_ID',name:'Name',pass:'Password',school:'School',work:'Work',age:'Age',gender:'Gender'},
+ settings:{t:'Settings',uid:'User_ID',view:'Default_View',week:'Week_Start_Day',theme:'Theme_Choice',sug:'AI_Suggestion'},
+ interests:{t:'Interests',uid:'User_ID',val:'Interests'},
+ tasks:{t:'Tasks',id:'Task_ID',uid:'User_ID',title:'Task_Title',date:'Date',type:'Type',pri:'Priority',desc:'Description',rep:'Is_Repeatable'},
+ todo:{t:'To-Do',id:'Task_ID',done:'Is_Complete'},
+ events:{t:'Events',id:'Event_ID',uid:'User_ID',title:'Event_Title',date:'Date',start:'Start_Time',end:'End_Time',loc:'Location',type:'Type',pri:'Priority',desc:'Description',rep:'Is_Repeatable'}};
+const OPT=['school','work','age','gender','rep'];
+let M=null,DBERR=[];
+const nice=e=>{const m=e.message||String(e);return /row-level security/i.test(m)?'Supabase is blocking this table (Row Level Security). Run setup.sql once in the Supabase SQL Editor.':/null value in column/i.test(m)?'An ID column is not auto-numbering: '+m:m};
+const fail=e=>{console.error(e);toast('Could not save: '+nice(e))};
 const q=async p=>{const r=await p;if(r.error)throw r.error;return r.data};
-const mail=u=>u.toLowerCase()+'@student-scheduler.app';
-const tm=t=>t?String(t).slice(0,5):'';
-async function dbItem(i){if(!useSB)return;try{
- const b={id:i.id,user_id:S.uid,title:i.title,type:i.type,priority:i.pri,description:i.desc||'',source:i.src||null};
- const row=i.kind=='task'?{...b,due_date:i.date,is_complete:!!i.done}:{...b,event_date:i.date,start_time:i.time||null,end_time:i.end||null,location:i.loc||''};
- await q(sb.from(i.kind=='task'?'tasks':'events').upsert(row))}catch(e){fail(e)}}
-async function dbDel(i){if(!useSB)return;try{await q(sb.from(i.kind=='task'?'tasks':'events').delete().eq('id',i.id))}catch(e){fail(e)}}
-async function dbSettings(){if(!useSB)return;const t=S.set;try{await q(sb.from('settings').upsert({user_id:S.uid,notifications:t.notif,default_view:t.view,week_start:+t.wk,theme:t.theme,suggestions:t.sug}))}catch(e){fail(e)}}
-async function dbProfile(){if(!useSB)return;try{const p=S.prof,a=parseInt(p.age);
- await q(sb.from('profiles').update({name:p.name,school:p.school,work:p.work,age:isNaN(a)?null:a,gender:p.gender,photo:S.photo||''}).eq('user_id',S.uid));
- await q(sb.from('interests').delete().eq('user_id',S.uid));
- if(S.interests.length)await q(sb.from('interests').insert(S.interests.map(interest=>({user_id:S.uid,interest}))))}catch(e){fail(e)}}
-async function dbLink(k,on){if(!useSB)return;try{
- if(on)await q(sb.from('linked_accounts').upsert({user_id:S.uid,provider:k,is_linked:true}));
- else{await q(sb.from('linked_accounts').delete().eq('user_id',S.uid).eq('provider',k));await q(sb.from('tasks').delete().eq('source',k));await q(sb.from('events').delete().eq('source',k))}}catch(e){fail(e)}}
-async function loadSB(){const id=S.uid;
- const[p,st,t,e,i,l,d]=await Promise.all([q(sb.from('profiles').select('*').eq('user_id',id).maybeSingle()),q(sb.from('settings').select('*').eq('user_id',id).maybeSingle()),q(sb.from('tasks').select('*')),q(sb.from('events').select('*')),q(sb.from('interests').select('interest')),q(sb.from('linked_accounts').select('provider,is_linked')),q(sb.from('discovery_events').select('*'))]);
- if(p){S.prof={name:p.name||'',school:p.school||'',work:p.work||'',age:p.age==null?'':String(p.age),gender:p.gender||''};S.photo=p.photo||''}
- if(st)S.set={notif:st.notifications,view:st.default_view,wk:st.week_start,theme:st.theme,sug:st.suggestions};
- const x=r=>({id:r.id,title:r.title,type:r.type,pri:r.priority,desc:r.description||'',src:r.source||undefined});
- S.items=[...t.map(r=>({...x(r),kind:'task',date:r.due_date,time:'',end:'',loc:'',done:r.is_complete})),...e.map(r=>({...x(r),kind:'event',date:r.event_date,time:tm(r.start_time),end:tm(r.end_time),loc:r.location||'',done:false}))];
- S.interests=i.map(r=>r.interest);S.linked={};l.forEach(r=>S.linked[r.provider]=r.is_linked);
- const rows=d.map(r=>[r.title,Math.round((pd(r.event_date)-pd(TODAY))/864e5),tm(r.start_time),tm(r.end_time),r.category,r.location||'',r.description||'',0,r.tags||[]]).filter(c=>c[1]>=0);
- if(rows.length)CAT=rows}
-async function startSession(session){S.uid=session.user.id;S.user=session.user.user_metadata?.username||session.user.email.split('@')[0];try{await loadSB()}catch(e){fail(e)}}
-async function logout(){if(useSB){try{await sb.auth.signOut()}catch(e){}S=init();localStorage.removeItem('sch_stay')}else{S.user=null;S.stay=false;save()}PE=false;go('login')}
+async function hashPw(u,p){if(window.crypto&&crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(u+':'+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}return'plain:'+p}
+const tt=v=>v?String(v).slice(11,16):'';
+const dd=v=>v?String(v).slice(0,10):'';
+const ty=v=>T[v]?v:'personal';
+const tcand=n=>{const a=[n,n.toLowerCase(),n.replace(/-/g,'_'),n.replace(/-/g,'_').toLowerCase(),n.replace(/-/g,'').toLowerCase()];return[...new Set([...a,...a.map(x=>x+'s')])]};
+const ccand=c=>[...new Set([c,c.toLowerCase(),c.replace(/_/g,' ')])];
+const qc=c=>/^[A-Za-z0-9_]+$/.test(c)?c:'"'+c+'"';
+const scol=(...c)=>c.map(qc).join(',');
+const mk=(k,o)=>{const r={};for(const[f,v]of Object.entries(o))if(M[k][f])r[M[k][f]]=v;return r};
+async function resolveTable(def){let why='';
+ for(const tn of tcand(def.t)){const names=Object.entries(def).filter(([f])=>f!='t');
+  const all=await sb.from(tn).select(scol(...names.map(n=>n[1]))).limit(0);
+  if(!all.error)return{map:{...Object.fromEntries(names),t:tn},miss:[]};
+  const c=all.error.code;
+  if(c=='PGRST205'||c=='42P01'){why=all.error.message;continue}
+  if(c!='42703')return{map:null,why:all.error.message};
+  const map={t:tn},miss=[];
+  await Promise.all(names.map(async([f,c0])=>{for(const cn of ccand(c0)){const r=await sb.from(tn).select(qc(cn)).limit(0);if(!r.error){map[f]=cn;return}}if(!OPT.includes(f))miss.push(c0)}));
+  return{map,miss}}
+ return{map:null,why:why||'not found'}}
+async function resolveSchema(){const out={},probs=[];
+ await Promise.all(Object.entries(ERD).map(async([k,def])=>{const r=await resolveTable(def);
+  if(!r.map)probs.push('Table "'+def.t+'" is not usable ('+r.why+')');
+  else{out[k]=r.map;if(r.miss.length)probs.push('Table "'+r.map.t+'" needs column(s): '+r.miss.join(', '))}}));
+ M=out;DBERR=probs}
+async function dbItem(it){if(!useSB)return;
+ try{if(it._p)await it._p;
+  it._p=(async()=>{const task=it.kind=='task',B=M[task?'tasks':'events'],ts=t=>t?it.date+'T'+t+':00':null;
+   const row=task?mk('tasks',{uid:S.uid,title:it.title,date:it.date,type:it.type,pri:String(it.pri),desc:it.desc||'',rep:false})
+    :mk('events',{uid:S.uid,title:it.title,date:it.date,start:ts(it.time),end:ts(it.end),loc:it.loc||'',type:it.type,pri:+it.pri,desc:it.desc||'',rep:false});
+   if(!it.rid){const r=await q(sb.from(B.t).insert(row).select(qc(B.id)).single());it.rid=r[B.id]}
+   else await q(sb.from(B.t).update(row).eq(B.id,it.rid));
+   if(task){const TD=M.todo,r2=await q(sb.from(TD.t).update({[TD.done]:!!it.done}).eq(TD.id,it.rid).select());
+    if(!r2.length)await q(sb.from(TD.t).insert(mk('todo',{id:it.rid,done:!!it.done})))}})();
+  await it._p}catch(e){fail(e)}}
+async function dbDel(it){if(!useSB)return;try{if(it._p)await it._p;if(!it.rid)return;const B=M[it.kind=='task'?'tasks':'events'];
+ if(it.kind=='task')await q(sb.from(M.todo.t).delete().eq(M.todo.id,it.rid));
+ await q(sb.from(B.t).delete().eq(B.id,it.rid))}catch(e){fail(e)}}
+async function dbSettings(){if(!useSB)return;try{localStorage.setItem('sch_notif_'+S.uid,S.set.notif?'1':'0');
+ const B=M.settings,row=mk('settings',{view:S.set.view,week:+S.set.wk==0?'Sunday':'Monday',theme:S.set.theme,sug:!!S.set.sug});
+ const r=await q(sb.from(B.t).update(row).eq(B.uid,S.uid).select());if(!r.length)await q(sb.from(B.t).insert({...row,[B.uid]:S.uid}))}catch(e){fail(e)}}
+async function dbProfile(np,ints){if(!useSB)return true;try{const U=M.users;
+ if(np.name!==S.prof.name){const x=await q(sb.from(U.t).select(qc(U.id)).eq(U.name,np.name).neq(U.id,S.uid).limit(1));if(x.length)throw new Error('That name is already taken.')}
+ const a=parseInt(np.age);
+ await q(sb.from(U.t).update(mk('users',{name:np.name,school:np.school,work:np.work,age:isNaN(a)?null:a,gender:np.gender})).eq(U.id,S.uid));
+ const I=M.interests;await q(sb.from(I.t).delete().eq(I.uid,S.uid));
+ if(ints.length)await q(sb.from(I.t).insert(ints.map(v=>mk('interests',{uid:S.uid,val:v}))));
+ S.user=np.name;return true}catch(e){fail(e);return false}}
+const lsPhoto=()=>{if(useSB)try{localStorage.setItem('sch_photo_'+S.uid,S.photo)}catch(e){}};
+function dbLink(k,on){if(!useSB)return;try{localStorage.setItem('sch_linked_'+S.uid,JSON.stringify(S.linked))}catch(e){}}
+async function loadSB(){const id=S.uid,MU=M.users,MS=M.settings,MI=M.interests,MT=M.tasks,ME=M.events,MD=M.todo;
+ const[u,se,ints,ts,es]=await Promise.all([q(sb.from(MU.t).select('*').eq(MU.id,id).limit(1)),q(sb.from(MS.t).select('*').eq(MS.uid,id).limit(1)),q(sb.from(MI.t).select('*').eq(MI.uid,id)),q(sb.from(MT.t).select('*').eq(MT.uid,id)),q(sb.from(ME.t).select('*').eq(ME.uid,id))]);
+ const tds=ts.length?await q(sb.from(MD.t).select('*').in(MD.id,ts.map(r=>r[MT.id]))):[];
+ const done={};tds.forEach(r=>done[r[MD.id]]=!!r[MD.done]);
+ const p=u[0]||{},s0=se[0],g=k=>{try{return localStorage.getItem(k+id)}catch(e){return null}};
+ S.prof={name:p[MU.name]||S.user,school:p[MU.school]||'',work:p[MU.work]||'',age:p[MU.age]==null?'':String(p[MU.age]),gender:p[MU.gender]||''};
+ S.photo=g('sch_photo_')||'';try{S.linked=JSON.parse(g('sch_linked_')||'{}')}catch(e){S.linked={}}
+ S.set={notif:g('sch_notif_')!=='0',view:s0?String(s0[MS.view]||'day').toLowerCase():'day',wk:s0&&/^sun/i.test(s0[MS.week]||'')?0:1,theme:s0?(s0[MS.theme]||'royal'):'royal',sug:s0?s0[MS.sug]!==false:true};
+ if(!['day','week','month'].includes(S.set.view))S.set.view='day';
+ const srcOf=d=>/^Imported from Canvas/.test(d)?'canvas':/^Imported from Workday/.test(d)?'workday':/^Imported from Other/.test(d)?'other':undefined;
+ S.items=[...ts.map(r=>({id:'t'+r[MT.id],rid:r[MT.id],kind:'task',title:r[MT.title],date:dd(r[MT.date]),time:'',end:'',loc:'',type:ty(r[MT.type]),pri:+r[MT.pri]||2,desc:r[MT.desc]||'',done:!!done[r[MT.id]],src:srcOf(r[MT.desc]||'')})),
+  ...es.map(r=>({id:'e'+r[ME.id],rid:r[ME.id],kind:'event',title:r[ME.title],date:dd(r[ME.date])||dd(r[ME.start]),time:tt(r[ME.start]),end:tt(r[ME.end]),loc:r[ME.loc]||'',type:ty(r[ME.type]),pri:+r[ME.pri]||2,desc:r[ME.desc]||'',done:false,src:srcOf(r[ME.desc]||'')}))].filter(i=>i.date);
+ S.interests=ints.map(r=>r[MI.val])}
+async function startSession(id,name){S.uid=id;S.user=name;try{await loadSB()}catch(e){fail(e)}}
+async function logout(){if(useSB){localStorage.removeItem('sch_login');sessionStorage.removeItem('sch_login');S=init()}else{S.user=null;S.stay=false;save()}PE=false;go('login')}
 /* ===================================================================== */
 const on=d=>S.items.filter(i=>i.date===d);
 const byT=(a,b)=>mins(a.time)-mins(b.time),byP=(a,b)=>a.pri-b.pri;
@@ -155,19 +206,24 @@ const nv=(v,m)=>`<div class="nav2"><button onclick="step(-1,'${v}')" aria-label=
 const wkStart=d=>{const x=pd(d),df=(x.getDay()-S.set.wk+7)%7;return ad(d,-df)};
 const trow=i=>`<div class="row ${i.done?'done':''}"><input type="checkbox" ${i.done?'checked':''} onclick="event.stopPropagation();tog('${i.id}')"><span class="t" onclick="openEv('${i.id}')">${esc(i.title)}</span><b class="p${i.pri}" title="${PN[i.pri]}">${PS[i.pri]}</b></div>`;
 function tog(id){const i=S.items.find(x=>x.id==id);i.done=!i.done;save();dbItem(i);r()}
-function login(){const c=LM=='up';return`<div class="main login" style="display:flex;flex-direction:column;justify-content:center"><div class="av">👤</div><div class="seg"><a class="${c?'':'on'}" onclick="LM='in';r()">Log in</a><a class="${c?'on':''}" onclick="LM='up';r()">Create account</a></div>
+function login(){const c=LM=='up';return`<div class="main login" style="display:flex;flex-direction:column;justify-content:center"><div class="av">👤</div>${DBERR.length?`<div class="rem" style="background:#fde8e8;color:#8a1c1c;font-weight:500"><b>Your Supabase tables need a quick fix:</b><br>${DBERR.map(esc).join('<br>')}<br><br>Run <b>setup.sql</b> once in the Supabase SQL Editor, then reload this page.</div>`:''}<div class="seg"><a class="${c?'':'on'}" onclick="LM='in';r()">Log in</a><a class="${c?'on':''}" onclick="LM='up';r()">Create account</a></div>
 <label for="u">Username</label><input id="u" oninput="chk()" autocomplete="username"><label for="pw">Password</label><input id="pw" type="password" oninput="chk()" autocomplete="current-password">
 <div style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="st" ${S.stay?'checked':''}><span>Stay logged in</span></div><div class="err" id="er"></div>
 <button class="btn" id="go" disabled onclick="auth()">${c?'Create account':'Log in'}</button>${useSB?'':'<p style="text-align:center;color:var(--mut);font-size:12px">Demo mode: data is saved in this browser only. Add your Supabase URL and key at the top of the script to connect.</p>'}</div>`}
 function chk(){$('#go').disabled=!($('#u').value.trim()&&$('#pw').value)}
 async function auth(){const u=$('#u').value.trim(),p=$('#pw').value,btn=$('#go'),er=$('#er');er.textContent='';
-if(useSB){if(!/^[A-Za-z0-9._-]{3,30}$/.test(u))return er.textContent='Username: 3-30 letters, numbers, . _ -';btn.disabled=true;
- try{let r;if(LM=='up'){r=await sb.auth.signUp({email:mail(u),password:p,options:{data:{username:u}}});if(r.error)throw r.error;
-  if(!r.data.session){btn.disabled=false;return er.textContent='Account created, but email confirmation is on. Turn off "Confirm email" in Supabase Auth settings, then log in.'}}
- else{r=await sb.auth.signInWithPassword({email:mail(u),password:p});if(r.error)throw r.error}
- localStorage.setItem('sch_stay',$('#st').checked?'1':'0');sessionStorage.setItem('sch_alive','1');
- await startSession(r.data.session);D=TODAY;go('summary')}
- catch(e){er.textContent=/already registered/i.test(e.message)?'That username is taken.':/invalid login/i.test(e.message)?'Incorrect username or password.':e.message;btn.disabled=false}
+if(useSB){if(DBERR.length)return er.textContent='Fix the database setup first (see the box above).';btn.disabled=true;
+ try{const h=await hashPw(u,p),U=M.users;let id;
+  if(LM=='up'){
+   const ex=await q(sb.from(U.t).select(qc(U.id)).eq(U.name,u).limit(1));
+   if(ex.length){er.textContent='That username is taken.';btn.disabled=false;return}
+   const acc=await q(sb.from(U.t).insert(mk('users',{name:u,pass:h})).select(qc(U.id)).single());id=acc[U.id];
+   await q(sb.from(M.settings.t).insert(mk('settings',{uid:id,view:'day',week:'Monday',theme:'royal',sug:true})))}
+  else{const r=await q(sb.from(U.t).select(scol(U.id,U.pass)).eq(U.name,u).limit(1));
+   if(!r.length||r[0][U.pass]!==h){er.textContent='Incorrect username or password.';btn.disabled=false;return}id=r[0][U.id]}
+  (($('#st').checked)?localStorage:sessionStorage).setItem('sch_login',JSON.stringify({id,name:u}));
+  await startSession(id,u);D=TODAY;go('summary')}
+ catch(e){er.textContent=nice(e);btn.disabled=false}
  return}
 if(LM=='up'){if(S.accounts[u])return er.textContent='That username is taken.';S.accounts[u]=p;if(!S.items.length)seed();S.interests=['career','ai'];S.prof.name=S.prof.name||u}
 else if(S.accounts[u]!==p)return er.textContent='Incorrect username or password.';
@@ -222,9 +278,11 @@ function prof(){const p=S.prof,L3=[['canvas','Canvas Account'],['workday','Workd
 const body=PE?`<div class="av" onclick="$('#ph').click()" style="cursor:pointer">${S.photo?`<img src="${S.photo}" alt="">`:'📷'}</div><input type="file" id="ph" accept="image/*" hidden onchange="photo(this)">${['name','school','work','age','gender'].map(k=>`<label>${k}</label><input id="p-${k}" value="${esc(p[k])}">`).join('')}<label>interests (comma-separated)</label><input id="p-interests" value="${esc(S.interests.join(', '))}"><button class="btn" onclick="saveP()">Save profile</button><button class="btn alt" onclick="PE=false;r()">Cancel</button>`
 :`<div class="av">${S.photo?`<img src="${S.photo}" alt="">`:esc((p.name||'?')[0].toUpperCase())}</div>${['name','school','work','age','gender'].map(k=>`<div class="kv"><span>${k[0].toUpperCase()+k.slice(1)}</span><b>${esc(p[k])||'—'}</b></div>`).join('')}<div class="kv"><span>Interests</span><b>${esc(S.interests.join(', '))||'—'}</b></div>${L3.map(([k,n])=>`<button class="btn alt" onclick="link('${k}')">${S.linked[k]?'✓ '+n+' linked (tap to unlink)':'Link '+n}</button>`).join('')}<button class="btn del" onclick="logout()">Log out</button>`;
 return shell('Profile',body,{left:'<button class="ic" onclick="PE=false;go(S.set.view)" aria-label="Back">‹</button>',right:PE?'<span></span>':'<button class="ic" onclick="PE=true;r()" aria-label="Edit profile">✎</button>'})}
-function saveP(){['name','school','work','age','gender'].forEach(k=>S.prof[k]=$('#p-'+k).value.trim());S.interests=[...new Set($('#p-interests').value.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean))];PE=false;save();dbProfile();toast('Profile saved');r()}
-function photo(inp){const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d'),s=Math.min(im.width,im.height);x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,160,160);S.photo=c.toDataURL('image/jpeg',.8);save();dbProfile();r()};im.src=rd.result};rd.readAsDataURL(f)}
-function link(k){if(S.linked[k]){S.linked[k]=false;S.items=S.items.filter(i=>i.src!=k);dbLink(k,false);toast('Unlinked');}else{S.linked[k]=true;const m=(o)=>{const it={id:uid(),desc:'Imported',loc:'',time:'',end:'',done:false,src:k,...o};S.items.push(it);dbItem(it)};
+async function saveP(){const np={};['name','school','work','age','gender'].forEach(k=>np[k]=$('#p-'+k).value.trim());np.name=np.name||S.prof.name;
+const ints=[...new Set($('#p-interests').value.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean))];
+if(!(await dbProfile(np,ints)))return;S.prof=np;S.interests=ints;PE=false;save();toast('Profile saved');r()}
+function photo(inp){const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d'),s=Math.min(im.width,im.height);x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,160,160);S.photo=c.toDataURL('image/jpeg',.8);save();lsPhoto();r()};im.src=rd.result};rd.readAsDataURL(f)}
+function link(k){if(S.linked[k]){S.linked[k]=false;S.items.filter(i=>i.src==k).forEach(dbDel);S.items=S.items.filter(i=>i.src!=k);dbLink(k,false);toast('Unlinked');}else{S.linked[k]=true;const m=(o)=>{const it={id:uid(),desc:'Imported from '+({canvas:'Canvas',workday:'Workday',other:'Other calendar'}[k]),loc:'',time:'',end:'',done:false,src:k,...o};S.items.push(it);dbItem(it)};
 if(k=='canvas'){m({kind:'task',title:'IS 402 Homework',date:ad(TODAY,1),type:'school',pri:1});m({kind:'task',title:'IS 401 Discussion Post',date:ad(TODAY,3),type:'school',pri:2})}
 if(k=='workday'){m({kind:'event',title:'Work Shift',date:ad(TODAY,2),time:'13:00',end:'17:00',type:'work',pri:2,loc:'Campus'})}
 if(k=='other'){m({kind:'event',title:'Dentist',date:ad(TODAY,4),time:'10:00',end:'11:00',type:'personal',pri:2,loc:'Provo'})}
@@ -235,9 +293,7 @@ document.documentElement.dataset.theme=S.set.theme;$('#app').dataset.page=h;$('#
 addEventListener('hashchange',r);
 (async function boot(){
 $('#app').innerHTML='<div class="main login"><p style="text-align:center;color:var(--mut)">Loading…</p></div>';
-if(useSB){try{const{data:{session}}=await sb.auth.getSession();
- if(session&&localStorage.getItem('sch_stay')!=='1'&&!sessionStorage.getItem('sch_alive'))await sb.auth.signOut();
- else if(session){sessionStorage.setItem('sch_alive','1');await startSession(session)}}catch(e){console.error(e)}}
+if(useSB){try{await resolveSchema();if(!DBERR.length){const raw=localStorage.getItem('sch_login')||sessionStorage.getItem('sch_login');if(raw){const a=JSON.parse(raw);await startSession(a.id,a.name)}}}catch(e){DBERR=['Could not reach Supabase: '+nice(e)]}}
 if(!S.user&&location.hash!=='#login')history.replaceState(null,'','#login');
 r()})();
 </script>
