@@ -6,7 +6,10 @@
 --   2) makes sure Tasks and Events each have a "User_ID" column whose type matches
 --      your User table's user_id (uuid or number). If an earlier run created it with
 --      the wrong type, that one column is converted and its values cleared.
---   3) turns off Row Level Security so the app can read/write your tables while you test.
+--   3) removes "check" rules on your tables' columns (for example a rule that Default_View
+--      must be one of a fixed list). The app writes its own values, and any mismatch would
+--      be rejected one column at a time.
+--   4) turns off Row Level Security so the app can read/write your tables while you test.
 
 do $$
 declare t record; uid_type text; cur_type text; cur_name text; want text;
@@ -42,7 +45,18 @@ begin
     end if;
   end loop;
 
-  -- 3) open access for testing
+  -- 3) drop CHECK constraints on public tables
+  for t in
+    select cl.relname as tbl, con.conname as con
+      from pg_constraint con
+      join pg_class cl on cl.oid = con.conrelid
+      join pg_namespace n on n.oid = cl.relnamespace
+     where con.contype = 'c' and n.nspname = 'public' and cl.relkind = 'r'
+  loop
+    execute format('alter table public.%I drop constraint %I', t.tbl, t.con);
+  end loop;
+
+  -- 4) open access for testing
   for t in select tablename from pg_tables where schemaname = 'public' loop
     execute format('alter table public.%I disable row level security', t.tablename);
   end loop;

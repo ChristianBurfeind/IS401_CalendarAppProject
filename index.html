@@ -86,8 +86,8 @@ h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)
    2. Paste the Project URL and the anon/public key between the quotes.
    Leave both empty to run in DEMO MODE (data saved in this browser only).
    ===================================================================== */
-const SUPABASE_URL='https://hgrkoiexrsmnasgmbstk.supabase.co';
-const SUPABASE_ANON_KEY='sb_publishable_jQ9j5hYfRFP6ATHftGyu2Q_g5rzId05';
+const SUPABASE_URL='';
+const SUPABASE_ANON_KEY='';
 /* ===================================================================== */
 const useSB=!!(SUPABASE_URL&&SUPABASE_ANON_KEY&&window.supabase);
 if(SUPABASE_URL&&!window.supabase)console.error('Supabase library failed to load; running in demo mode.');
@@ -125,7 +125,7 @@ const ERD={
  events:{t:'Events',id:'Event_ID',uid:'User_ID',title:'Event_Title',date:'Date',start:'Start_Time',end:'End_Time',loc:'Location',type:'Type',pri:'Priority',desc:'Description',rep:'Is_Repeatable'}};
 const OPT=['school','work','age','gender','rep'];
 let M=null,DBERR=[];
-const nice=e=>{const m=e.message||String(e);return /row-level security/i.test(m)?'Supabase is blocking this table (Row Level Security). Run setup.sql once in the Supabase SQL Editor.':/null value in column/i.test(m)?'An ID column is not auto-numbering: '+m:m};
+const nice=e=>{const m=e.message||String(e);return /row-level security/i.test(m)?'Supabase is blocking this table (Row Level Security). Run setup.sql once in the Supabase SQL Editor.':/violates check constraint/i.test(m)?'The database rejected a value ('+m+'). Run the latest setup.sql once: it removes these value rules.':/violates foreign key/i.test(m)?'A database link rejected this ('+m+'). Run the latest setup.sql once.':m};
 const fail=e=>{console.error(e);toast('Could not save: '+nice(e))};
 const q=async p=>{const r=await p;if(r.error)throw r.error;return r.data};
 async function hashPw(u,p){if(window.crypto&&crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(u+':'+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}return'plain:'+p}
@@ -142,7 +142,7 @@ async function insRow0(tbl,idc,row){
   r=await sb.from(tbl).insert({...row,[idc]:id}).select(qc(idc)).single();
   if(r.error&&/uuid/i.test(r.error.message||''))r=await sb.from(tbl).insert({...row,[idc]:newUuid()}).select(qc(idc)).single()}
  if(r.error)throw r.error;return r.data}
-const tt=v=>v?String(v).slice(11,16):'';
+const tt=v=>{if(!v)return'';v=String(v);return /^\d\d:\d\d/.test(v)?v.slice(0,5):v.slice(11,16)};
 const dd=v=>v?String(v).slice(0,10):'';
 const ty=v=>T[v]?v:'personal';
 const tcand=n=>{const a=[n,n.toLowerCase(),n.replace(/-/g,'_'),n.replace(/-/g,'_').toLowerCase(),n.replace(/-/g,'').toLowerCase()];return[...new Set([...a,...a.map(x=>x+'s')])]};
@@ -170,20 +170,32 @@ async function resolveSchema(){const out={},probs=[];
  M=out;DBERR=probs}
 async function dbItem(it){if(!live())return;
  try{if(it._p)await it._p;
-  it._p=(async()=>{const task=it.kind=='task',B=M[task?'tasks':'events'],ts=t=>t?it.date+'T'+t+':00':null;
-   const row=task?mk('tasks',{uid:S.uid,title:it.title,date:it.date,type:it.type,pri:String(it.pri),desc:it.desc||'',rep:false})
-    :mk('events',{uid:S.uid,title:it.title,date:it.date,start:ts(it.time),end:ts(it.end),loc:it.loc||'',type:it.type,pri:+it.pri,desc:it.desc||'',rep:false});
-   if(!it.rid){const r=await insRow(B.t,B.id,row);it.rid=r[B.id]}
-   else await q(sb.from(B.t).update(row).eq(B.id,it.rid));
+  it._p=(async()=>{const task=it.kind=='task',B=M[task?'tasks':'events'];
+   const build=tm=>{const ts=t=>t?(tm=='time'?t+':00':it.date+'T'+t+':00'):null;
+    return task?mk('tasks',{uid:S.uid,title:it.title,date:it.date,type:it.type,pri:String(it.pri),desc:it.desc||'',rep:false})
+    :mk('events',{uid:S.uid,title:it.title,date:it.date,start:ts(it.time),end:ts(it.end),loc:it.loc||'',type:it.type,pri:+it.pri,desc:it.desc||'',rep:false})};
+   const modes=task?['ts']:(TMODE=='time'?['time','ts']:['ts','time']);let lastErr;
+   for(const tm of modes){try{const row=build(tm);
+     if(!it.rid){const r=await insRow(B.t,B.id,row);it.rid=r[B.id]}
+     else await q(sb.from(B.t).update(row).eq(B.id,it.rid));
+     TMODE=tm;lastErr=null;break}catch(e){lastErr=e;if(!/invalid input syntax for type (time|timestamp|date)/i.test(e.message||''))throw e}}
+   if(lastErr)throw lastErr;
    if(task){const TD=M.todo,r2=await q(sb.from(TD.t).update({[TD.done]:!!it.done}).eq(TD.id,it.rid).select());
     if(!r2.length)await q(sb.from(TD.t).insert(mk('todo',{id:it.rid,done:!!it.done})))}})();
   await it._p}catch(e){fail(e)}}
 async function dbDel(it){if(!live())return;try{if(it._p)await it._p;if(!it.rid)return;const B=M[it.kind=='task'?'tasks':'events'];
  if(it.kind=='task')await q(sb.from(M.todo.t).delete().eq(M.todo.id,it.rid));
  await q(sb.from(B.t).delete().eq(B.id,it.rid))}catch(e){fail(e)}}
-async function dbSettings(){if(!live())return;try{localStorage.setItem('sch_notif_'+S.uid,S.set.notif?'1':'0');
- const B=M.settings,row=mk('settings',{view:S.set.view,week:+S.set.wk==0?'Sunday':'Monday',theme:S.set.theme,sug:!!S.set.sug});
- const r=await q(sb.from(B.t).update(row).eq(B.uid,S.uid).select());if(!r.length)await q(sb.from(B.t).insert({...row,[B.uid]:S.uid}))}catch(e){fail(e)}}
+let WKNUM=false,TMODE='ts';
+async function putSettings(uid,v){const B=M.settings;
+ for(const num of(WKNUM?[true]:[false,true])){
+  const row=mk('settings',{view:v.view,week:num?(+v.wk==0?0:1):(+v.wk==0?'Sunday':'Monday'),theme:v.theme,sug:!!v.sug});
+  const retry=e=>!num&&/invalid input syntax for type (integer|smallint|bigint|numeric)/i.test(e.message||'');
+  let r=await sb.from(B.t).update(row).eq(B.uid,uid).select();
+  if(r.error){if(retry(r.error))continue;throw r.error}
+  if(!r.data.length){r=await sb.from(B.t).insert({...row,[B.uid]:uid}).select();if(r.error){if(retry(r.error))continue;throw r.error}}
+  WKNUM=num;return}}
+async function dbSettings(){if(!live())return;try{localStorage.setItem('sch_notif_'+S.uid,S.set.notif?'1':'0');await putSettings(S.uid,S.set)}catch(e){fail(e)}}
 async function dbProfile(np,ints){if(!live())return true;try{const U=M.users;
  if(np.name!==S.prof.name){const x=await q(sb.from(U.t).select(qc(U.id)).eq(U.name,np.name).neq(U.id,S.uid).limit(1));if(x.length)throw new Error('That name is already taken.')}
  const a=parseInt(np.age);
@@ -200,7 +212,7 @@ async function loadSB(){const id=S.uid,MU=M.users,MS=M.settings,MI=M.interests,M
  const p=u[0]||{},s0=se[0],g=k=>{try{return localStorage.getItem(k+id)}catch(e){return null}};
  S.prof={name:p[MU.name]||S.user,school:p[MU.school]||'',work:p[MU.work]||'',age:p[MU.age]==null?'':String(p[MU.age]),gender:p[MU.gender]||''};
  S.photo=g('sch_photo_')||'';try{S.linked=JSON.parse(g('sch_linked_')||'{}')}catch(e){S.linked={}}
- S.set={notif:g('sch_notif_')!=='0',view:s0?String(s0[MS.view]||'day').toLowerCase():'day',wk:s0&&/^sun/i.test(s0[MS.week]||'')?0:1,theme:s0?(s0[MS.theme]||'royal'):'royal',sug:s0?s0[MS.sug]!==false:true};
+ S.set={notif:g('sch_notif_')!=='0',view:s0?String(s0[MS.view]||'day').toLowerCase():'day',wk:s0&&(s0[MS.week]===0||s0[MS.week]===7||/^(sun|0$|7$)/i.test(String(s0[MS.week]??'')))?0:1,theme:s0&&['royal','dark','forest','plum'].includes(String(s0[MS.theme]||'').toLowerCase())?String(s0[MS.theme]).toLowerCase():'royal',sug:s0?s0[MS.sug]!==false:true};
  if(!['day','week','month'].includes(S.set.view))S.set.view='day';
  const srcOf=d=>/^Imported from Canvas/.test(d)?'canvas':/^Imported from Workday/.test(d)?'workday':/^Imported from Other/.test(d)?'other':undefined;
  S.items=[...ts.map(r=>({id:'t'+r[MT.id],rid:r[MT.id],kind:'task',title:r[MT.title],date:dd(r[MT.date]),time:'',end:'',loc:'',type:ty(r[MT.type]),pri:+r[MT.pri]||2,desc:r[MT.desc]||'',done:!!done[r[MT.id]],src:srcOf(r[MT.desc]||'')})),
@@ -235,9 +247,11 @@ if(useSB){if(DBERR.length)return er.textContent='Fix the database setup first (s
  try{const h=await hashPw(u,p),U=M.users;let id;
   if(LM=='up'){
    const ex=await q(sb.from(U.t).select(qc(U.id)).eq(U.name,u).limit(1));
-   if(ex.length){er.textContent='That username is taken.';btn.disabled=false;return}
-   const acc=await insRow(U.t,U.id,mk('users',{name:u,pass:h}));id=acc[U.id];
-   await q(sb.from(M.settings.t).insert(mk('settings',{uid:id,view:'day',week:'Monday',theme:'royal',sug:true})))}
+   if(ex.length){const o=await q(sb.from(U.t).select(scol(U.id,U.pass)).eq(U.name,u).limit(1));
+    if(o.length&&o[0][U.pass]===h)id=o[0][U.id];   // same name + password: finish a half-created account
+    else{er.textContent='That username is taken.';btn.disabled=false;return}}
+   else{const acc=await insRow(U.t,U.id,mk('users',{name:u,pass:h}));id=acc[U.id]}
+   try{await putSettings(id,{view:'day',wk:1,theme:'royal',sug:true})}catch(e){console.warn(e);setTimeout(()=>toast('Account created, but settings were not saved: '+nice(e)),600)}}
   else{const r=await q(sb.from(U.t).select(scol(U.id,U.pass)).eq(U.name,u).limit(1));
    if(!r.length||r[0][U.pass]!==h){er.textContent='Incorrect username or password.';btn.disabled=false;return}id=r[0][U.id]}
   (($('#st').checked)?localStorage:sessionStorage).setItem('sch_login',JSON.stringify({id,name:u}));
