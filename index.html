@@ -93,7 +93,8 @@ const useSB=!!(SUPABASE_URL&&SUPABASE_ANON_KEY&&window.supabase);
 if(SUPABASE_URL&&!window.supabase)console.error('Supabase library failed to load; running in demo mode.');
 let DEMO=false;
 const live=()=>useSB&&!DEMO;
-const sb=useSB?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}}):null;
+function cleanUrl(u){u=(u||'').trim();try{const x=new URL(/^https?:\/\//i.test(u)?u:'https://'+u),m=x.pathname.match(/\/project\/([a-z0-9]+)/i);if(/(^|\.)supabase\.com$/i.test(x.hostname)&&m)return'https://'+m[1]+'.supabase.co';return x.origin}catch(e){return u}}
+const sb=useSB?window.supabase.createClient(cleanUrl(SUPABASE_URL),SUPABASE_ANON_KEY.trim(),{auth:{persistSession:false,autoRefreshToken:false}}):null;
 const $=s=>document.querySelector(s);
 const T={school:['School','#3f6fd1'],work:['Work','#8e44ad'],church:['Church','#c2185b'],social:['Social','#d98200'],personal:['Personal','#1a9c8a'],career:['Career','#00838f']};
 const PS={1:'!!!',2:'!!',3:'!'},PN={1:'Urgent',2:'Standard',3:'Flexible'};
@@ -130,12 +131,16 @@ const q=async p=>{const r=await p;if(r.error)throw r.error;return r.data};
 async function hashPw(u,p){if(window.crypto&&crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(u+':'+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}return'plain:'+p}
 let INS=Promise.resolve();
 function insRow(tbl,idc,row){const p=INS.then(()=>insRow0(tbl,idc,row));INS=p.catch(()=>{});return p}
+const newUuid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c=='x'?r:r&3|8).toString(16)});
 async function insRow0(tbl,idc,row){
  let r=await sb.from(tbl).insert(row).select(qc(idc)).single();
- if(r.error&&/null value in column|not-null/i.test(r.error.message||'')&&(r.error.message||'').toLowerCase().includes(idc.toLowerCase())){
+ const m0=e=>e&&/null value in column|not-null/i.test(e.message||'')&&(e.message||'').toLowerCase().includes(idc.toLowerCase());
+ if(m0(r.error)){
   const m=await q(sb.from(tbl).select(qc(idc)).order(qc(idc),{ascending:false}).limit(1));
-  const next=(m.length?Number(m[0][idc])||0:0)+1;
-  r=await sb.from(tbl).insert({...row,[idc]:next}).select(qc(idc)).single()}
+  const last=m.length?m[0][idc]:null;
+  const id=(last!=null&&isNaN(Number(last)))?newUuid():(Number(last)||0)+1;
+  r=await sb.from(tbl).insert({...row,[idc]:id}).select(qc(idc)).single();
+  if(r.error&&/uuid/i.test(r.error.message||''))r=await sb.from(tbl).insert({...row,[idc]:newUuid()}).select(qc(idc)).single()}
  if(r.error)throw r.error;return r.data}
 const tt=v=>v?String(v).slice(11,16):'';
 const dd=v=>v?String(v).slice(0,10):'';
@@ -160,6 +165,8 @@ async function resolveSchema(){const out={},probs=[];
  await Promise.all(Object.entries(ERD).map(async([k,def])=>{const r=await resolveTable(def);
   if(!r.map)probs.push('Table "'+def.t+'" is not usable ('+r.why+')');
   else{out[k]=r.map;if(r.miss.length)probs.push('Table "'+r.map.t+'" needs column(s): '+r.miss.join(', '))}}));
+ if(probs.length&&probs.every(x=>/Invalid path|Failed to fetch|NetworkError|Load failed/i.test(x)))probs.splice(0,probs.length,'Could not reach Supabase. Check that SUPABASE_URL is exactly your project URL, like https://abcdxyz.supabase.co (nothing after .co).');
+ else if(probs.length&&probs.every(x=>/Invalid API key|JWT|apikey/i.test(x)))probs.splice(0,probs.length,'Supabase rejected the key. Use the anon / public key from Project Settings > API.');
  M=out;DBERR=probs}
 async function dbItem(it){if(!live())return;
  try{if(it._p)await it._p;
@@ -218,7 +225,7 @@ const nv=(v,m)=>`<div class="nav2"><button onclick="step(-1,'${v}')" aria-label=
 const wkStart=d=>{const x=pd(d),df=(x.getDay()-S.set.wk+7)%7;return ad(d,-df)};
 const trow=i=>`<div class="row ${i.done?'done':''}"><input type="checkbox" ${i.done?'checked':''} onclick="event.stopPropagation();tog('${i.id}')"><span class="t" onclick="openEv('${i.id}')">${esc(i.title)}</span><b class="p${i.pri}" title="${PN[i.pri]}">${PS[i.pri]}</b></div>`;
 function tog(id){const i=S.items.find(x=>x.id==id);i.done=!i.done;save();dbItem(i);r()}
-function login(){const c=LM=='up';return`<div class="main login" style="display:flex;flex-direction:column;justify-content:center"><div class="av">👤</div>${DBERR.length?`<div class="rem" style="background:#fde8e8;color:#8a1c1c;font-weight:500"><b>Your Supabase tables need a quick fix:</b><br>${DBERR.map(esc).join('<br>')}<br><br>Run <b>setup.sql</b> once in the Supabase SQL Editor, then reload this page.</div>`:''}<div class="seg"><a class="${c?'':'on'}" onclick="LM='in';r()">Log in</a><a class="${c?'on':''}" onclick="LM='up';r()">Create account</a></div>
+function login(){const c=LM=='up';return`<div class="main login" style="display:flex;flex-direction:column;justify-content:center"><div class="av">👤</div>${DBERR.length?`<div class="rem" style="background:#fde8e8;color:#8a1c1c;font-weight:500"><b>Your Supabase setup needs attention:</b><br>${DBERR.map(esc).join('<br>')}${DBERR.some(x=>/needs column|not usable/.test(x))?'<br><br>If a table or column is missing, run <b>setup.sql</b> once in the Supabase SQL Editor, then reload this page.':''}</div>`:''}<div class="seg"><a class="${c?'':'on'}" onclick="LM='in';r()">Log in</a><a class="${c?'on':''}" onclick="LM='up';r()">Create account</a></div>
 <label for="u">Username</label><input id="u" oninput="chk()" autocomplete="username"><label for="pw">Password</label><input id="pw" type="password" oninput="chk()" autocomplete="current-password">
 <div style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="st" ${S.stay?'checked':''}><span>Stay logged in</span></div><div class="err" id="er"></div>
 <button class="btn" id="go" disabled onclick="auth()">${c?'Create account':'Log in'}</button><button class="btn alt" onclick="startDemo()">Try demo (no login)</button>${useSB?'':'<p style="text-align:center;color:var(--mut);font-size:12px">Demo mode: data is saved in this browser only. Add your Supabase URL and key at the top of the script to connect.</p>'}</div>`}
