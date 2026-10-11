@@ -96,4 +96,6 @@ Save index.html in VS Code (Ctrl+S / Cmd+S). Live Server will refresh the page a
 You should now be able to create an account by adding a username and password.
 Refresh the page.
 You should be able to log into your account now and your account credentials will appear in Supabase.
+
+
 <img width="909" height="513" alt="Screenshot 2026-10-10 at 8 01 47 PM" src="https://github.com/user-attachments/assets/54ce0113-4c47-4cea-b0b8-edc770d8d961" />
