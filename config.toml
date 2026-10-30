@@ -1,0 +1,4 @@
+# This function verifies the caller with auth.getUser(jwt) inside its handler.
+# Gateway verification is disabled for compatibility with current signing keys.
+[functions.delete-account]
+verify_jwt = false

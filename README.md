@@ -12,7 +12,6 @@ The app is still in development. Eventually, students will also be able to conne
 
 - **Live website:** Add URL here
 - **Trello board:** Add link here
-- **Team members:** Add names here
 
 ## Features and progress
 
@@ -71,14 +70,11 @@ Use the existing team database for normal development. Local Live Server testing
 
 Detailed instructions are in `START-HERE.md` and `DELETE-ACCOUNT-SETUP.md`. Keep those documents and the setup files in the repository.
 
-For the team's existing base schema, the upgrades are applied in this order:
+For the team's existing base schema, run **`scheduler-setup.sql`** once in Supabase's SQL Editor. It combines the account/profile, birthday, and account-deletion upgrades in one transaction. Then deploy `supabase/functions/delete-account/index.ts` as `delete-account`, following `DELETE-ACCOUNT-SETUP.md`.
 
-1. `auth-profile-setup.sql`
-2. `birthday-setup.sql`
-3. `delete-account-setup.sql`
-4. Deploy `supabase/functions/delete-account/index.ts` as `delete-account`, following `DELETE-ACCOUNT-SETUP.md`.
+**Already installed all three earlier scripts?** No database action is needed; this file packages the same upgrades. If some upgrades are missing, run the entire combined file. It supports reapplication on the expected schema, but replaces policies on the named scheduler tables, so review any team-added policies first.
 
-Apply only upgrades that have not already been installed. These scripts require the existing scheduler tables; they do not build a new database from scratch. Do not rerun the legacy `setup.sql` afterward or rerun the Auth setup after deletion setup, because this can replace security protections.
+This script requires the existing scheduler tables; it does not build a new database from scratch. Replace the three separate upgrade files in the repository with this combined file. Do not run the legacy `setup.sql` afterward.
 
 Set Supabase Authentication's Site URL and allowed redirect URLs for the app's hosting/testing addresses. Keep privileged account-deletion credentials on the server.
 
