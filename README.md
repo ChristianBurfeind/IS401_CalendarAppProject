@@ -19,7 +19,7 @@ Complete features have been implemented and tested as noted below. Not complete 
 | Behavioral requirement | Status | Notes |
 | --- | --- | --- |
 | Create an account, confirm an email address, and log in. | Complete | Tested with Supabase. |
-| Stay signed in after refreshing and log out when finished. | Not complete | Implemented; verify both Stay logged in options on the live site. |
+| Stay signed in after refreshing and log out when finished. | Complete | Account persistence remains after closing the tab or window and reopening. |
 | Edit and save personal profile information. | Complete | Changes persist after saving. |
 | Choose an avatar or upload, crop, and save a profile picture. | Complete | Supports file selection and drag and drop. |
 | Save a birth date, see a calculated age, and receive an in-app birthday greeting. | Not complete | Implemented; live saving and birthday display still need verification. |
