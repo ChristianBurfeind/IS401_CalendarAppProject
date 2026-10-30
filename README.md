@@ -10,8 +10,8 @@ The app is still in development. Eventually, students will also be able to conne
 
 ## Project information
 
-- **Live website:** Add URL here
-- **Trello board:** Add link here
+- **Live website:** (https://christianburfeind.github.io/IS401_CalendarAppProject/#login)
+- **Trello board:** (https://trello.com/invite/b/6adf6df4f46fb08f117cf9ba/ATTI75b722587a81655ed2712b7e82219e803598B143/calendar-organizer-group-1-4)
 
 ## Features and progress
 
