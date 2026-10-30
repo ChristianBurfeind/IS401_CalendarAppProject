@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>Student Scheduler</title>
+    <title>The Daily Blend</title>
     <style>
       :root {
         box-sizing: border-box;
@@ -1943,7 +1943,7 @@
       }
       function login() {
         const c = LM === "up";
-        return `<div class="main login"><div class="av">👤</div><h1>Student Scheduler</h1>
+        return `<div class="main login"><div class="av">👤</div><h1>The Daily Blend</h1>
 ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the setup guide for missing tables or columns, then reload. If birth_date is missing, run birthday-setup.sql.</div>` : ""}
 <div class="seg"><a href="#login" class="${c ? "" : "on"}" onclick="LM='in';r()">Log in</a><a href="#login" class="${c ? "on" : ""}" onclick="LM='up';r()">Create account</a></div>
 <form onsubmit="event.preventDefault();auth()"><label for="u">Email address</label><input id="u" type="email" value="${esc(pendingEmail)}" required autocomplete="email" oninput="chk()">
