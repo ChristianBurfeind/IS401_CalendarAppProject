@@ -1,101 +1,102 @@
-README
-WEB CALENDAR APP FOR STUDENTS
-Section 01 Group 4
+# The Daily Blend
 
-App Summary: 
-College students have trouble keeping track of everything that is going on socially, academically, and professionally. Our personas included those of students at BYU who have jobs, are in rigorous majors, have active social lives, and have church callings. After talking with several individuals that matched our personas we decided to make a calendar app that consolidates the tasks and events for BYU specific students. Most importantly linking calendars from several school, work, and social sites so that students no longer have to use several applications to know what they need to accomplish that day. This application allows a user upon signing in to see a to-do list screen which will summarize the day’s events and tasks. The user then can go to a calendar view of the day with built-in suggestions during free time based on user data and interests. The user can input events and tasks as well as link their outside calendar accounts in settings. The settings and profile pages allow for additional user options and the discover page gives access to AI suggested individuals.
+**BYU · IS 401 · Section 01 · Group 4**
 
-Tech Stack: Our team chose a HTML/JavaScript frontend with Supabase as a backend and a service.
-Frontend — HTML, CSS, and JavaScript: HTML provides the structure of our screens, CSS controls the layout and appearance, and JavaScript handles interactions such as switching calendar views, adding events, and completing tasks.
-Backend and Database — Supabase with PostgreSQL: Supabase hosts our relational database, which stores profiles, settings, interests, calendars, events, tasks, and completion status. Primary and foreign keys connect the tables based on our ERD.
-This approach fits our team because it builds on the HTML, CSS, JavaScript, and SQL skills we are learning. Supabase reduces the work required to build and maintain a separate backend server, allowing us to focus on the calendar’s features and user experience while still gaining experience with database design and application development.
+The Daily Blend is a web calendar for BYU students balancing school, work, church responsibilities, and social life. Our goal is to help students stay organized and feel accomplished by bringing their tasks and events into one place.
 
-How to Get it Running
+The app is still in development. Eventually, students will also be able to connect outside calendars and discover activities that match their interests.
 
-Step 1: Download the project from GitHub
-Go to the GitHub repository your instructor shared.
-Click the green Code button near the top right.
-Click Download ZIP.
-Unzip the folder somewhere you can find it (your Desktop works fine).
-If you know how to use git: git clone <repo-url> works too.
+## Project information
 
-Step 2: Open the app in your browser
-Do not double-click the file to open it — that loads it as a file:// URL, which Chrome blocks from making requests to external services like Supabase. Use Live Server instead:
-Open VS Code.
-Install the Live Server extension if you do not have it yet: click the Extensions icon on the left sidebar (or press Ctrl+Shift+X / Cmd+Shift+X), search for "Live Server" by Ritwick Dey, and click Install.
-Open the IS401_CalendarAppProject folder in VS Code (File → Open Folder).
-Right-click calendar.html in the Explorer panel on the left → Open with Live Server.
-Your browser should open automatically onto a sign in page. 
-Part 2 — Connect a real database with Supabase
-Step 3: Create a Supabase account
-Go to supabase.com and click Start your project.
-Sign up with your GitHub account (easiest) or create an account with your email.
-Verify your email if prompted.
-Step 4: Create a new project
-Once logged in, click New project.
-Give your project a name (e.g. calendar-demo).
-Set a database password — write it down somewhere, you may need it later.
-Choose any region.
-Click Create new project and wait about 30 seconds for it to set up.
-Step 5: Create the user table
-This is where you define what data your app will store.
-In the left sidebar, click Table Editor.
-Click Create a new table.
-Name the table: user (lowercase, no spaces).
-Uncheck "Enable Row Level Security (RLS)" — leave it off for now.
-Supabase automatically adds id and created_at columns. Keep those.
-Add these nine columns by clicking Add column for each:
-Name
-Type
-Default value
-Nullable
-user_id
-uuid
-(leave blank)
-Set as primary key
-name
-text
-(leave blank)
-No
-password
-text
-(leave blank)
-No
+- **Live website:** Add URL here
+- **Trello board:** Add link here
+- **Team members:** Add names here
 
-7. Click Save
+## Features and progress
 
-Your database is ready.
-Step 6: Get your credentials
-These are the two pieces of information your app needs to talk to your database.
-In the left sidebar, click Project Settings (the gear icon near the bottom).
-You need two things from two different sections:
-Your Project URL — click Data API in the settings menu. Your URL is at the top of that page. It looks like https://abcdefgh.supabase.co.
-Your publishable key — click API Keys in the settings menu. Under ‘Publishable key,’ copy the key that starts with sb_publishable_.... (Do not use the Secret key — that one has admin access and should never go in a frontend file.)
-Keep this browser tab open — you will need both values in the next step.
-Step 7: Add your credentials to the app
-Open index.html in VS Code (right-click the file → Open with → VS Code, or open VS Code and drag the file in).
-Use Find (Ctrl+F / Cmd+F) and search for YOUR_PROJECT_URL to jump straight to the right spot. You are looking for these three lines:
-const SUPABASE_URL = 'YOUR_PROJECT_URL'   // <-- paste here
-const SUPABASE_KEY = 'YOUR_ANON_KEY'      // <-- paste here
-Replace 'YOUR_PROJECT_URL' with your Project URL (keep the quotes).
-Warning
-The URL must end in .supabase.co with nothing after it. If you copied it from the API settings page it may include /rest/v1/ at the end — delete that part or the app will not be able to reach your database.
-Replace 'YOUR_ANON_KEY' with your publishable key (keep the quotes).
-Save the file (Ctrl+S / Cmd+S).
-Example of what it should look like after your edits:
-const SUPABASE_URL = 'https://abcdefgh.supabase.co'
-const SUPABASE_KEY = 'sb_publishable_xxxxxxxxxxxxxxxx...'
+Complete features have been implemented and tested as noted below. Not complete includes features that still need development or testing on the latest live website.
 
-Step 8: Run SQL in Supabase
-Copy the setup.sql file from GitHub.
-Open SQL editor in Supabase, and paste the sql query and run it.
-It should display “Success. No rows returned”.
-Your Supabase should now be set up.
-Step 9: Test it
-Save index.html in VS Code (Ctrl+S / Cmd+S). Live Server will refresh the page automatically.
-You should now be able to create an account by adding a username and password.
-Refresh the page.
-You should be able to log into your account now and your account credentials will appear in Supabase.
+| Behavioral requirement | Status | Notes |
+| --- | --- | --- |
+| Create an account, confirm an email address, and log in. | Complete | Tested with Supabase. |
+| Stay signed in after refreshing and log out when finished. | Not complete | Implemented; verify both Stay logged in options on the live site. |
+| Edit and save personal profile information. | Complete | Changes persist after saving. |
+| Choose an avatar or upload, crop, and save a profile picture. | Complete | Supports file selection and drag and drop. |
+| Save a birth date, see a calculated age, and receive an in-app birthday greeting. | Not complete | Implemented; live saving and birthday display still need verification. |
+| Delete an account after two confirmation prompts. | Complete | Account deletion tested; confirm related data and pictures are removed during final checks. |
+| Add, edit, and delete events with dates, times, locations, and descriptions. | Not complete | Verify all changes remain after refreshing. |
+| View saved events in day, week, and month calendars. | Not complete | Verify each view with real saved data. |
+| Add tasks and mark them complete. | Not complete | Verify tasks and completion status persist. |
+| Organize tasks and events by category and priority. | Not complete | Verify saving and display. |
+| Connect Canvas, Learning Suite, Workday, and another calendar. | Not complete | Buttons are Coming soon placeholders. |
+| Receive homework reminders 24 hours before deadlines and social-event reminders four hours beforehand. | Not complete | Reminder delivery and timing need implementation and testing. |
+| Find, filter, and add relevant activities from Discover. | Not complete | Verify real event sources and saved additions. |
+| Receive notifications about newly posted events matching interests or major. | Not complete | Matching and notification behavior still need work. |
+| Save interests and settings that personalize the app. | Not complete | Verify persistence and the effect of each setting. |
+| Use an AI workflow automation. | Not complete | Define and build the team's selected workflow. |
+| Automatically track behavior for the team's four Key Results. | Not complete | Finalize the OKRs and the tables/events that update them. |
 
+Update this table as the team finishes and tests each feature.
 
-<img width="909" height="513" alt="Screenshot 2026-10-10 at 8 01 47 PM" src="https://github.com/user-attachments/assets/54ce0113-4c47-4cea-b0b8-edc770d8d961" />
+## Technology
+
+- **Frontend:** HTML, CSS, and JavaScript
+- **Backend and database:** Supabase with PostgreSQL
+- **Accounts:** Supabase Auth
+- **Profile pictures:** Supabase Storage
+- **Account deletion:** Supabase Edge Function named `delete-account`
+
+Passwords are handled by Supabase Auth. Database Row Level Security (RLS) restricts users to their own records.
+
+## Run the app locally
+
+1. Clone the repository or download and unzip it from GitHub.
+2. Open the project folder in VS Code.
+3. In `index.html`, set the two configuration values using the team's Supabase project:
+
+   ```javascript
+   const SUPABASE_URL = "YOUR_PROJECT_URL";
+   const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
+   ```
+
+   Use the base project URL ending in `.supabase.co` and the public publishable/anon key. Keep the placeholder comparisons in the `configured` block unchanged. Never put a secret or service-role key in the HTML.
+4. Install **Live Server** by Ritwick Dey if needed. Right-click `index.html` and select **Open with Live Server**.
+5. Create an account, use the newest confirmation email, and return to the app to log in.
+
+Use the existing team database for normal development. Local Live Server testing does not publish the website.
+
+### Supabase setup
+
+Detailed instructions are in `START-HERE.md` and `DELETE-ACCOUNT-SETUP.md`. Keep those documents and the setup files in the repository.
+
+For the team's existing base schema, the upgrades are applied in this order:
+
+1. `auth-profile-setup.sql`
+2. `birthday-setup.sql`
+3. `delete-account-setup.sql`
+4. Deploy `supabase/functions/delete-account/index.ts` as `delete-account`, following `DELETE-ACCOUNT-SETUP.md`.
+
+Apply only upgrades that have not already been installed. These scripts require the existing scheduler tables; they do not build a new database from scratch. Do not rerun the legacy `setup.sql` afterward or rerun the Auth setup after deletion setup, because this can replace security protections.
+
+Set Supabase Authentication's Site URL and allowed redirect URLs for the app's hosting/testing addresses. Keep privileged account-deletion credentials on the server.
+
+## Definition of Done
+
+Before marking work Done, our team checks that:
+
+- Pages look good and work on desktop and mobile.
+- Features work from the user interface through Supabase to the database, and saved changes survive a refresh.
+- Lighthouse Accessibility scores are **90 or higher** for the current version's relevant pages.
+- This README lists behavioral requirements as Complete or Not complete.
+- Code is merged into `main`.
+- The latest changes are available at a public website URL.
+
+Current release verification is still pending for desktop/mobile layouts, full end-to-end flows, Lighthouse, the merge to `main`, and public deployment. Add the live URL and update these results after testing.
+
+## Testing and next steps
+
+Use test accounts to check signup/login, profile edits, picture uploads, tasks/events, settings, and data persistence. For deletion, test both Cancel options before deleting a disposable account. Confirm its Auth account, related records, and pictures are removed while another account's data remains intact.
+
+Profile pictures are publicly readable by URL. Account deletion covers the app's configured records and picture folder; it does not immediately erase backups or logs. New user-owned tables will need to be added to the deletion cleanup.
+
+Our Trello board tracks sprint roles, assignments, estimates, OKRs, and upcoming work. Priorities include calendar connections, reminders, discovery, AI automation, usage tracking, and improvements from our design feedback. Keep the feature table updated as this work is completed.
