@@ -1,10 +1,64 @@
 -- The Daily Blend: combined scheduler upgrades
--- Run the WHOLE file in Supabase SQL Editor against the existing team schema.
--- This is not an empty-database bootstrap. Export a backup first.
+-- Run the WHOLE file in Supabase SQL Editor for a fresh or compatible existing project.
+-- Creates missing current-app tables. Export a backup before modifying an existing project.
 -- Replaces policies on the named scheduler tables; review any custom policies first.
 -- No accounts or app rows are deleted by installation.
 -- One transaction: either all upgrades commit, or all changes roll back.
 BEGIN;
+
+-- Initial tables for the CURRENT HTML (not the obsolete profiles/id schema).
+-- Existing compatible tables are kept; no sample rows are inserted.
+DO $bootstrap$
+DECLARE spec record; actual text; required text; found integer;
+BEGIN
+  IF to_regclass('public.profiles') IS NOT NULL
+     AND to_regclass('public."user"') IS NULL THEN
+    RAISE EXCEPTION 'Older profiles-based schema detected. This needs a reviewed migration to the current user/task_id schema; no changes were applied.';
+  END IF;
+  FOR spec IN SELECT * FROM (VALUES
+    ('user', ARRAY['user_id','name','password'],
+      'CREATE TABLE public."user" (user_id uuid PRIMARY KEY, name text NOT NULL DEFAULT '''', password text, school text DEFAULT ''BYU'', work text DEFAULT '''', age integer, gender text DEFAULT '''', created_at timestamptz NOT NULL DEFAULT now())'),
+    ('settings', ARRAY['user_id','default_view','week_start_day','theme_choice','ai_suggestion'],
+      'CREATE TABLE public.settings (user_id uuid PRIMARY KEY, default_view text NOT NULL DEFAULT ''day'' CHECK(default_view IN (''day'',''week'',''month'')), week_start_day integer NOT NULL DEFAULT 1 CHECK(week_start_day IN (0,1)), theme_choice text NOT NULL DEFAULT ''royal'', ai_suggestion boolean NOT NULL DEFAULT true)'),
+    ('interests', ARRAY['user_id','interests'],
+      'CREATE TABLE public.interests (user_id uuid NOT NULL, interests text NOT NULL, PRIMARY KEY(user_id,interests))'),
+    ('tasks', ARRAY['task_id','user_id','task_title','date','type','priority','description'],
+      'CREATE TABLE public.tasks (task_id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL DEFAULT auth.uid(), task_title text NOT NULL, date date NOT NULL, type text NOT NULL DEFAULT ''school'' CHECK(type IN (''school'',''work'',''church'',''social'',''personal'',''career'')), priority smallint NOT NULL DEFAULT 2 CHECK(priority BETWEEN 1 AND 3), description text NOT NULL DEFAULT '''', is_repeatable boolean NOT NULL DEFAULT false)'),
+    ('events', ARRAY['event_id','user_id','event_title','date','start_time','end_time','location','type','priority','description'],
+      'CREATE TABLE public.events (event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL DEFAULT auth.uid(), event_title text NOT NULL, date date NOT NULL, start_time time, end_time time, location text NOT NULL DEFAULT '''', type text NOT NULL DEFAULT ''social'' CHECK(type IN (''school'',''work'',''church'',''social'',''personal'',''career'')), priority smallint NOT NULL DEFAULT 2 CHECK(priority BETWEEN 1 AND 3), description text NOT NULL DEFAULT '''', is_repeatable boolean NOT NULL DEFAULT false)'),
+    ('to-do', ARRAY['task_id','is_complete'],
+      'CREATE TABLE public."to-do" (task_id uuid PRIMARY KEY REFERENCES public.tasks(task_id) ON DELETE CASCADE, is_complete boolean NOT NULL DEFAULT false)')
+  ) AS definitions(name, columns, ddl)
+  LOOP
+    SELECT count(*), min(tablename) INTO found, actual FROM pg_tables
+    WHERE schemaname='public' AND
+      (lower(tablename)=spec.name OR (spec.name='to-do' AND lower(tablename) IN ('to_do','todo')));
+    IF found > 1 THEN
+      RAISE EXCEPTION 'Ambiguous scheduler tables for %. Resolve duplicate names before setup.', spec.name;
+    ELSIF found = 0 THEN
+      -- Mixed old/current schemas need manual review, not an automatic UUID conversion.
+      IF spec.name='user' AND EXISTS(SELECT 1 FROM pg_tables WHERE schemaname='public' AND lower(tablename) IN ('tasks','events','settings','interests')) THEN
+        RAISE EXCEPTION 'Scheduler tables exist without public.user. A reviewed migration is required.';
+      END IF;
+      IF spec.name='to-do' AND EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND lower(table_name)='tasks' AND lower(column_name)='task_id' AND data_type <> 'uuid') THEN
+        RAISE EXCEPTION 'Existing task IDs are not UUIDs. Create a matching completion table before setup.';
+      END IF;
+      EXECUTE spec.ddl;
+      actual := spec.name;
+    END IF;
+    FOREACH required IN ARRAY spec.columns LOOP
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=actual AND lower(column_name)=required) THEN
+        RAISE EXCEPTION 'Table % is missing current-app column %. A reviewed migration is required; no changes were applied.', actual, required;
+      END IF;
+    END LOOP;
+    IF spec.name <> 'to-do' AND EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=actual AND lower(column_name)='user_id' AND data_type <> 'uuid') THEN
+      RAISE EXCEPTION 'Table % needs UUID user IDs for Supabase Auth. Existing IDs were not changed.', actual;
+    END IF;
+  END LOOP;
+END;
+$bootstrap$;
+
+
 
 -- Accounts, profile pictures, and ownership policies
 -- Existing test accounts and their data remain, but are NOT claimed by new signups.
