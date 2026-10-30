@@ -2,6 +2,8 @@
 
 **BYU · IS 401 · Section 01 · Group 4**
 
+Christian Burfeind, Nina Freeman, Addison Laker, Myles Madarieta
+
 The Daily Blend is a web calendar for BYU students balancing school, work, church responsibilities, and social life. Our goal is to help students stay organized and feel accomplished by bringing their tasks and events into one place.
 
 The app is still in development. Eventually, students will also be able to connect outside calendars and discover activities that match their interests.
