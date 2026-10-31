@@ -977,6 +977,41 @@
         opacity: 1;
         cursor: default;
       }
+      .int-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 4px 0 10px;
+      }
+      .int-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 6px 5px 12px;
+        border-radius: 99px;
+        background: var(--acc);
+        color: var(--pri);
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .int-chip button {
+        border: 0;
+        background: transparent;
+        color: var(--pri);
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 2px 6px;
+      }
+      .int-add {
+        display: flex;
+        gap: 8px;
+      }
+      .int-add .add {
+        flex: none;
+        padding: 0 16px;
+        font-size: 13px;
+      }
       .profile-age {
         display: block;
         color: var(--mut);
@@ -1209,7 +1244,7 @@
         avatar: "",
         photoPath: "",
         set: { notif: true, view: "day", wk: 1, theme: "royal", sug: true },
-        prof: { name: "", school: "BYU", work: "", birthDate: "", gender: "" },
+        prof: { name: "", school: "BYU", work: "", birthDate: "", gender: "", major: "", age: "" },
       });
       let S;
       if (useSB) S = init();
@@ -1247,6 +1282,8 @@
           school: "School",
           work: "Work",
           birthDate: "birth_date",
+          age: "age",
+          major: "major",
           gender: "Gender",
           photo: "photo_path",
           avatar: "avatar_id",
@@ -1612,7 +1649,9 @@
                   school: np.school,
                   work: np.work,
                   birthDate: np.birthDate || null,
+                  age: np.birthDate ? ageFromBirthDate(np.birthDate) : null,
                   gender: np.gender,
+                  major: np.major,
                 }),
               )
               .eq(U.id, S.uid),
@@ -1667,6 +1706,8 @@
                     "work",
                     "birthDate",
                     "gender",
+                    "major",
+                    "age",
                     "photo",
                     "avatar",
                   ]
@@ -1712,6 +1753,8 @@
             ? String(p[MU.birthDate]).slice(0, 10)
             : "",
           gender: p[MU.gender] || "",
+          major: p[MU.major] || "",
+          age: p[MU.age] ?? "",
         };
         S.photoPath = p[MU.photo] || "";
         S.avatar = p[MU.avatar] || "";
@@ -1807,13 +1850,52 @@
         S.stay = remember;
         const U = M.users,
           rows = await q(
-            sb.from(U.t).select(qc(U.id)).eq(U.id, user.id).limit(1),
+            sb.from(U.t).select(scol(U.id, U.name)).eq(U.id, user.id).limit(1),
           );
-        if (!rows.length) {
+        const md0 = user.user_metadata || {};
+        const seedInts = async (list) => {
+          if (list && list.length)
+            await q(
+              sb
+                .from(M.interests.t)
+                .insert(list.map((v) => mk("interests", { uid: user.id, val: v }))),
+            );
+        };
+        // If a database trigger already created a bare row at signup, fill it in from the form.
+        if (rows.length && md0.name && (!rows[0][U.name] || rows[0][U.name] === user.email))
           await q(
-            sb.from(U.t).insert(mk("users", { id: user.id, name: user.email })),
+            sb.from(U.t).update(
+              mk("users", {
+                name: md0.name,
+                school: md0.school || "",
+                work: md0.work || "",
+                gender: md0.gender || "",
+                major: md0.major || "",
+                birthDate: md0.birth_date || null,
+                age: md0.age ?? null,
+              }),
+            ).eq(U.id, user.id),
+          );
+        if (rows.length && md0.name && (!rows[0][U.name] || rows[0][U.name] === user.email))
+          await seedInts(md0.interests);
+        if (!rows.length) {
+          const md = user.user_metadata || {};
+          await q(
+            sb.from(U.t).insert(
+              mk("users", {
+                id: user.id,
+                name: md.name || user.email,
+                school: md.school || "",
+                work: md.work || "",
+                gender: md.gender || "",
+                major: md.major || "",
+                birthDate: md.birth_date || null,
+                age: md.age ?? null,
+              }),
+            ),
           );
           await putSettings(user.id, S.set);
+          await seedInts(md.interests);
         }
         await loadSB();
       }
@@ -1946,14 +2028,91 @@
         return `<div class="main login"><div class="av">👤</div><h1>The Daily Blend</h1>
 ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the setup guide for missing tables or columns, then reload. If birth_date is missing, run birthday-setup.sql.</div>` : ""}
 <div class="seg"><a href="#login" class="${c ? "" : "on"}" onclick="LM='in';r()">Log in</a><a href="#login" class="${c ? "on" : ""}" onclick="LM='up';r()">Create account</a></div>
-<form onsubmit="event.preventDefault();auth()"><label for="u">Email address</label><input id="u" type="email" value="${esc(pendingEmail)}" required autocomplete="email" oninput="chk()">
+<form onsubmit="event.preventDefault();auth()">${c ? `<label for="su-name">Name</label><input id="su-name" type="text" required autocomplete="name" oninput="chk()">
+<label for="su-school">School</label><input id="su-school" type="text" required autocomplete="organization" oninput="chk()">
+<label for="su-major">Major</label><input id="su-major" type="text" required oninput="chk()">
+<label for="su-work">Work</label><input id="su-work" type="text" required oninput="chk()">
+<label>Date of birth</label>${birthPicker("su-birth", "", "chk()")}
+<label for="su-gender">Gender</label><select id="su-gender" required onchange="chk()"><option value="">Select…</option><option>Female</option><option>Male</option></select>
+<label for="su-interests">Interests</label><input id="su-interests" type="text" required placeholder="Separate with commas" oninput="chk()">` : ""}<label for="u">Email address</label><input id="u" type="email" value="${esc(pendingEmail)}" required autocomplete="email" oninput="chk()">
 <label for="pw">Password</label><input id="pw" type="password" required minlength="${c ? 8 : 1}" autocomplete="${c ? "new-password" : "current-password"}" oninput="chk()">
 <label style="display:flex;gap:8px;align-items:center"><input id="st" type="checkbox" ${remember ? "checked" : ""}> Stay logged in</label>
 <div id="er" class="err" role="status" aria-live="polite"></div><button class="btn" id="go" disabled>${c ? "Create account" : "Log in"}</button></form>
-<button class="btn alt" onclick="startDemo()">Try demo (no login)</button>${!useSB ? "<p>Live login requires your Supabase URL and public key. Demo changes are temporary.</p>" : ""}</div>`;
+${!useSB ? "<p>Live login requires your Supabase URL and public key.</p>" : ""}</div>`;
+      }
+      const normInterests = (str) => [
+        ...new Set(
+          String(str || "")
+            .split(",")
+            .map((x) => x.trim().toLowerCase())
+            .filter(Boolean),
+        ),
+      ];
+      async function saveInterests(list) {
+        const old = S.interests;
+        S.interests = list;
+        r();
+        if (live()) {
+          try {
+            const I = M.interests;
+            await q(sb.from(I.t).delete().eq(I.uid, S.uid));
+            if (list.length)
+              await q(
+                sb
+                  .from(I.t)
+                  .insert(list.map((v) => mk("interests", { uid: S.uid, val: v }))),
+              );
+          } catch (e) {
+            S.interests = old;
+            fail(e);
+            r();
+            return;
+          }
+        }
+        save();
+      }
+      function addInterests() {
+        const add = normInterests($("#int-new").value);
+        if (add.length) saveInterests([...new Set([...S.interests, ...add])]);
+      }
+      function removeInterest(i) {
+        saveInterests(S.interests.filter((_, j) => j !== i));
+      }
+      function interestsSection() {
+        return `<div class="kv" style="display:block;border-bottom:0"><span>Interests</span></div>
+          <div class="int-chips">${S.interests.map((t, i) => `<span class="int-chip">${esc(t)}<button type="button" onclick="removeInterest(${i})" aria-label="Remove ${esc(t)}">×</button></span>`).join("") || '<small style="color:var(--mut)">None yet</small>'}</div>
+          <div class="int-add"><input id="int-new" type="text" placeholder="Add interests, separated by commas" onkeydown="if(event.key==='Enter'){event.preventDefault();addInterests()}"><button type="button" class="add" onclick="addInterests()">Add</button></div>`;
+      }
+      // Month/day/year dropdowns start empty (a date picker would pre-select today).
+      // A hidden input with id=<id> holds the YYYY-MM-DD value the rest of the app reads.
+      function birthPicker(id, value, cb) {
+        const ok = parseBirthDate(value) ? value : "",
+          [y, m, d] = ok.split("-"),
+          months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December",
+          ],
+          opt = (v, t, sel) =>
+            `<option value="${v}" ${String(sel) === String(v) ? "selected" : ""}>${t}</option>`,
+          thisYear = new Date().getFullYear(),
+          sel = (k, label, items, cur) =>
+            `<select id="${id}-${k}" aria-label="${label}" onchange="syncBirth('${id}');${cb}"><option value="">${label}</option>${items.join("")}</select>`;
+        return `<div style="display:flex;gap:8px">${sel("m", "Month", months.map((n, i) => opt(String(i + 1).padStart(2, "0"), n, m)))}${sel("d", "Day", Array.from({ length: 31 }, (_, i) => opt(String(i + 1).padStart(2, "0"), i + 1, d)))}${sel("y", "Year", Array.from({ length: thisYear - 1919 }, (_, i) => opt(thisYear - i, thisYear - i, y)))}</div><input type="hidden" id="${id}" value="${esc(ok)}">`;
+      }
+      function syncBirth(id) {
+        const v = ["y", "m", "d"].map((k) => $("#" + id + "-" + k).value),
+          date = v.join("-");
+        $("#" + id).value = v.every(Boolean) && parseBirthDate(date) ? date : "";
       }
       function chk() {
         $("#go").disabled = !(
+          (LM !== "up" ||
+            (["name", "school", "major", "work"].every((k) =>
+              $("#su-" + k).value.trim(),
+            ) &&
+              $("#su-gender").value &&
+              normInterests($("#su-interests").value).length &&
+              ageFromBirthDate($("#su-birth").value) !== null)) &&
           $("#u").validity.valid &&
           $("#u").value.trim() &&
           $("#pw").value
@@ -1965,7 +2124,7 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
           btn = $("#go"),
           er = $("#er");
         if (!useSB) {
-          er.textContent = "Configure Supabase first, or use Try demo.";
+          er.textContent = "Configure Supabase first.";
           return;
         }
         btn.disabled = true;
@@ -1973,7 +2132,24 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
           choosePersistence($("#st").checked);
           const result =
             LM === "up"
-              ? await sb.auth.signUp({ email, password })
+              ? await sb.auth.signUp({
+                  email,
+                  password,
+                  options: {
+                    data: {
+                      name: $("#su-name").value.trim(),
+                      school: $("#su-school").value.trim(),
+                      work: $("#su-work").value.trim(),
+                      major: $("#su-major").value.trim(),
+                      gender: $("#su-gender").value,
+                      interests: normInterests($("#su-interests").value),
+                      birth_date: $("#su-birth").value || null,
+                      age: $("#su-birth").value
+                        ? ageFromBirthDate($("#su-birth").value)
+                        : null,
+                    },
+                  },
+                })
               : await sb.auth.signInWithPassword({ email, password });
           if (result.error) throw result.error;
           if (!result.data.session) {
@@ -2370,7 +2546,14 @@ ${ev ? `<div style="display:flex;gap:8px"><div style="flex:1"><label>Start</labe
           ["social", "games"],
         ],
       ];
-      const fy = (c) => (c[8] || []).some((t) => S.interests.includes(t));
+      const fy = (c) => {
+        const hay = (c[0] + " " + c[6] + " " + (c[8] || []).join(" ")).toLowerCase();
+        return S.interests.some((i) =>
+          new RegExp(
+            "(^|[^a-z0-9])" + i.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^a-z0-9]|$)",
+          ).test(hay),
+        );
+      };
       function disc() {
         const q = Q.toLowerCase(),
           L2 = CAT.filter(
@@ -2591,7 +2774,6 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
         if (current) current.textContent = ageDescription(S.prof.birthDate);
         const input = $("#p-birthDate");
         if (input) {
-          input.max = iso(new Date());
           updateAgePreview();
         }
       }
@@ -2599,7 +2781,9 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
         ["name", "Name"],
         ["school", "School"],
         ["work", "Work"],
+        ["major", "Major"],
         ["birthDate", "Date of birth"],
+        ["age", "Age"],
         ["gender", "Gender"],
         ["interests", "Interests"],
       ];
@@ -2650,11 +2834,17 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
       function prof() {
         const p = S.prof;
         const fields = PROFILE_FIELDS.map(([field, label]) => {
+          if (field === "interests") return PE ? "" : interestsSection();
+          if (field === "age") {
+            if (PE) return "";
+            const a = ageFromBirthDate(p.birthDate) ?? p.age;
+            return `<div class="kv"><span>${label}</span><b>${esc(a) || "—"}</b></div>`;
+          }
           const value =
             field === "interests" ? S.interests.join(", ") : p[field];
           return PE
             ? `<label for="p-${field}">${label}${field === "interests" ? " (comma-separated)" : ""}</label>
-            <input id="p-${field}" ${field === "birthDate" ? `type="date" max="${iso(new Date())}" oninput="updateAgePreview()" aria-describedby="profile-age-preview"` : 'type="text"'} value="${esc(value)}">${field === "birthDate" ? `<small id="profile-age-preview" class="profile-age-hint">${esc(ageDescription(value))}</small><small class="profile-age-hint">Optional. Used to calculate your age and celebrate your birthday.</small>` : ""}`
+            ${field === "birthDate" ? birthPicker("p-birthDate", value, "updateAgePreview()") : field === "gender" ? `<select id="p-gender"><option value="">Select…</option>${["Female", "Male"].map((g) => `<option ${value === g ? "selected" : ""}>${g}</option>`).join("")}</select>` : `<input id="p-${field}" type="text" value="${esc(value)}">`}${field === "birthDate" ? `<small id="profile-age-preview" class="profile-age-hint">${esc(ageDescription(value))}</small><small class="profile-age-hint">Optional. Used to calculate your age and celebrate your birthday.</small>` : ""}`
             : `<div class="kv"><span>${label}</span><div class="profile-field-value"><b>${field === "birthDate" ? birthDateDisplay(value) : esc(value) || "—"}</b>${fieldPencil(field, label)}</div></div>`;
         }).join("");
         const body = `${profilePictureButton()}<p class="photo-hint">Click your picture to change it</p>
@@ -2778,7 +2968,7 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
       }
       async function saveP() {
         const np = {};
-        ["name", "school", "work", "birthDate", "gender"].forEach(
+        ["name", "school", "work", "major", "birthDate", "gender"].forEach(
           (k) => (np[k] = $("#p-" + k).value.trim()),
         );
         np.name = np.name || S.prof.name;
@@ -2787,14 +2977,7 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
             "Choose a valid date of birth that is not in the future.";
           return;
         }
-        const ints = [
-          ...new Set(
-            $("#p-interests")
-              .value.split(",")
-              .map((x) => x.trim().toLowerCase())
-              .filter(Boolean),
-          ),
-        ];
+        const ints = S.interests;
         const button = $("#save-profile");
         if (button?.disabled) return;
         if (button) button.disabled = true;
