@@ -2033,6 +2033,61 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
 <label for="su-major">Major</label><input id="su-major" type="text" required oninput="chk()">
 <label for="su-work">Work</label><input id="su-work" type="text" required oninput="chk()">
 <label>Date of birth</label>${birthPicker("su-birth", "", "chk()")}
+<h2>School calendars — optional</h2>
+<p style="font-size:13px;color:var(--mut)">
+  Save your calendar links for future importing.
+  Assignments and events will not be imported yet.
+  You can leave these fields blank.
+</p>
+
+<label for="su-canvas">Canvas calendar feed link</label>
+<input
+  id="su-canvas"
+  type="url"
+  placeholder="Paste your Canvas calendar feed URL"
+  autocomplete="off"
+  aria-describedby="su-canvas-help"
+/>
+
+<details id="su-canvas-help" style="margin:8px 0 16px;font-size:13px">
+  <summary style="cursor:pointer">
+    Where do I find my Canvas link?
+  </summary>
+  <ol>
+    <li>Sign into Canvas in another browser tab.</li>
+    <li>Open Calendar from the main navigation.</li>
+    <li>Click Calendar Feed in the calendar sidebar.</li>
+    <li>Copy the feed URL and paste it above.</li>
+  </ol>
+  <p>Use the calendar feed link, rather than the address of the Calendar page.</p>
+</details>
+
+<label for="su-learning-suite">Learning Suite calendar feed link</label>
+<input
+  id="su-learning-suite"
+  type="url"
+  placeholder="Paste a Learning Suite iCalendar feed URL"
+  autocomplete="off"
+  aria-describedby="su-learning-suite-help"
+/>
+
+<details id="su-learning-suite-help"
+  style="margin:8px 0 16px;font-size:13px">
+  <summary style="cursor:pointer">
+    Where do I find my Learning Suite link?
+  </summary>
+  <ol>
+    <li>Sign into Learning Suite in another browser tab.</li>
+    <li>Open the course you want to add.</li>
+    <li>Select Schedule, then Get iCalendar Feed.</li>
+    <li>Select the option to copy and paste the URL.</li>
+    <li>Copy that feed URL and paste it above.</li>
+  </ol>
+  <p>
+    Start with one course. Support for adding more course links is coming later.
+    Use the feed URL, rather than the course page address.
+  </p>
+</details>
 <label for="su-gender">Gender</label><select id="su-gender" required onchange="chk()"><option value="">Select…</option><option>Female</option><option>Male</option></select>
 <label for="su-interests">Interests</label><input id="su-interests" type="text" required placeholder="Separate with commas" oninput="chk()">` : ""}<label for="u">Email address</label><input id="u" type="email" value="${esc(pendingEmail)}" required autocomplete="email" oninput="chk()">
 <label for="pw">Password</label><input id="pw" type="password" required minlength="${c ? 8 : 1}" autocomplete="${c ? "new-password" : "current-password"}" oninput="chk()">
