@@ -1853,6 +1853,45 @@
             sb.from(U.t).select(scol(U.id, U.name)).eq(U.id, user.id).limit(1),
           );
         const md0 = user.user_metadata || {};
+        // Save calendar links collected during signup.
+        const calendarLinks = [
+          {
+            provider: "canvas",
+            feed_url: (md0.canvas_feed_url || "").trim(),
+            label: "Canvas",
+          },
+          {
+            provider: "learning_suite",
+            feed_url: (md0.learning_suite_feed_url || "").trim(),
+            label: "Learning Suite",
+          },
+        ]
+          .filter((calendar) => calendar.feed_url !== "")
+          .map((calendar) => ({
+            ...calendar,
+            user_id: user.id,
+          }));
+
+        if (calendarLinks.length > 0) {
+          const { error: calendarError } = await sb
+            .from("calendar_connections")
+            .upsert(calendarLinks, {
+              onConflict: "user_id,provider,feed_url",
+              ignoreDuplicates: true,
+            });
+
+          if (calendarError) throw calendarError;
+
+          // Remove the temporary signup copies after saving successfully.
+          const { error: metadataError } = await sb.auth.updateUser({
+            data: {
+              canvas_feed_url: null,
+              learning_suite_feed_url: null,
+            },
+          });
+
+          if (metadataError) throw metadataError;
+        }
         const seedInts = async (list) => {
           if (list && list.length)
             await q(
@@ -2198,6 +2237,8 @@ ${!useSB ? "<p>Live login requires your Supabase URL and public key.</p>" : ""}<
                       major: $("#su-major").value.trim(),
                       gender: $("#su-gender").value,
                       interests: normInterests($("#su-interests").value),
+                      canvas_feed_url: $("#su-canvas").value.trim(),
+                      learning_suite_feed_url: $("#su-learning-suite").value.trim(),
                       birth_date: $("#su-birth").value || null,
                       age: $("#su-birth").value
                         ? ageFromBirthDate($("#su-birth").value)
