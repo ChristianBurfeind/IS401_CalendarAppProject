@@ -1110,6 +1110,1046 @@
           display: none;
         }
       }
+
+/* =====================================
+   BYU CAMPUS AESTHETIC THEME
+   ===================================== */
+
+/* BYU Colors */
+:root {
+    --bg: #f3f7fc;
+    --card: #ffffff;
+    --ink: #092653;
+    --mut: #60738e;
+    --pri: #002e5d;
+    --on: #ffffff;
+    --acc: #e2efff;
+    --line: #dbe5f0;
+}
+
+/* Background */
+body {
+    background-color: #f3f7fc;
+    color: #092653;
+}
+
+/* Headings */
+h1, h2, h3 {
+    color: #002e5d;
+}
+
+/* Links */
+a {
+    color: #124b90;
+}
+
+/* Buttons */
+button {
+    border-radius: 10px;
+    transition: background-color 0.2s ease;
+}
+
+/* Primary buttons */
+.btn,
+.fab {
+    background-color: #002e5d;
+    color: white;
+}
+
+.btn:hover,
+.fab:hover {
+    background-color: #124b90;
+}
+
+/* Secondary buttons */
+.btn.alt {
+    background-color: #e2efff;
+    color: #002e5d;
+}
+
+/* Delete buttons */
+.btn.del {
+    background-color: var(--urg);
+    color: white;
+}
+
+/* Input fields */
+input,
+select,
+textarea {
+    border-color: #d5e1f0;
+    border-radius: 10px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline-color: #8bb9ed;
+}
+
+/* Cards */
+.card {
+    border-color: #dbe5f0;
+    box-shadow: 0 4px 16px rgba(0, 46, 93, 0.06);
+}
+
+/* Navigation active state */
+.nav a.on {
+    background-color: #124b90;
+    color: white;
+}
+
+/* Navigation hover */
+.nav a:hover {
+    background-color: #d7eaff;
+    color: #002e5d;
+}
+
+/* Calendar controls */
+.seg a.on {
+    background-color: #002e5d;
+    color: white;
+}
+
+/* Today's date */
+.mo .td {
+    background-color: #e2efff;
+    outline-color: #1765b5;
+}
+
+/* Calendar hover */
+.mo > div:hover {
+    background-color: #edf5ff;
+}
+
+/* Preserve dark mode */
+[data-theme="dark"] body {
+    background-color: var(--bg);
+    color: var(--ink);
+}
+
+/* BYU background and layout improvements */
+
+body,
+#app {
+    background: #f3f7fc;
+}
+
+.top {
+    background: #ffffff;
+    border-bottom: 1px solid #dbe5f0;
+}
+
+.nav {
+    background: linear-gradient(
+        180deg,
+        #e2efff 0%,
+        #f3f7fc 100%
+    );
+}
+
+.main {
+    background: #f3f7fc;
+}
+
+.mo > div {
+    background: #ffffff;
+    border: 1px solid #dbe5f0;
+}
+
+.wk > div {
+    background: #ffffff;
+    border: 1px solid #dbe5f0;
+}
+
+
+/* BYU Campus Aesthetic — dashboard refresh */
+:root { --bg:#f3f7fd; --card:#fff; --ink:#092653; --mut:#5b6f8c; --pri:#002e5d; --acc:#e6f0fc; --line:#dbe5f0; }
+body, #app { background:#f3f7fd; }
+#app { grid-template-columns:220px minmax(0,1fr); grid-template-rows: auto minmax(0,1fr); grid-template-areas:"nav top" "nav main"; }
+.top { background:linear-gradient(105deg,#fff 40%,#eaf3ff 100%); padding:22px 32px; min-height:112px; border-bottom:0; }
+.top h1 { text-align:left; font-size:clamp(22px,2.1vw,32px); letter-spacing:-.8px; color:#002e5d; }
+.top .ic:first-child { order:3; }
+.top .ic:last-child { order:2; justify-self:end; }
+.nav { background:linear-gradient(180deg,#e1efff,#f7fbff 70%); border-right:1px solid #d8e5f5; padding:24px 13px; gap:8px; }
+.nav::before { content:'BYU\A Calendar'; white-space:pre; display:block; color:#002e5d; font:800 24px/1.05 Georgia,serif; padding:10px 15px 30px; letter-spacing:-.7px; }
+.nav a { color:#153b6c; padding:13px 15px; border-radius:9px; }
+.nav a.on { background:#124b90; color:white; box-shadow:0 3px 10px #002e5d20; }
+.nav a:hover:not(.on) { background:#d5e8ff; }
+.main { background:linear-gradient(#f3f7fd,#f9fbff); padding:26px 30px 110px; }
+#app[data-page="month"] .main { padding-inline:30px; }
+.seg { margin:0 0 18px; background:#e7eff9; border:1px solid #dce6f3; }
+.nav2 { background:white; border:1px solid var(--line); border-radius:14px 14px 0 0; padding:16px 20px; margin:0; font-size:17px; color:#002e5d; }
+.mo { background:#fff; border:1px solid var(--line); border-top:0; padding:15px; border-radius:0 0 14px 14px; gap:0; box-shadow:0 8px 25px #002e5d0b; }
+.mo > b { padding:12px 0; font-size:12px; border-bottom:1px solid #e0e8f2; }
+.mo > div { min-height:94px; border:0; border-right:1px solid #e6ecf5; border-bottom:1px solid #e6ecf5; border-radius:0; text-align:left; padding:9px; background:white; }
+.mo > div:hover { background:#f0f6ff; }
+.mo .td { outline:0; background:#e9f3ff; box-shadow:inset 0 0 0 2px #2365b1; }
+.mo u { background:#dceafd!important; color:#002e5d; padding:4px 6px; border-radius:5px; }
+.campus-layout { display:grid; grid-template-columns:minmax(0,1fr) 245px; gap:20px; align-items:start; }
+.campus-side { display:grid; gap:16px; }
+.campus-panel { background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px; box-shadow:0 8px 25px #002e5d0b; }
+.campus-panel h3 { margin:0 0 14px; font-size:16px; color:#002e5d; }
+.campus-panel .row { background:#f5f8fd; }
+.campus-hero { border-radius:12px; background:linear-gradient(135deg,#dcecff,#fff 55%,#d6e6fb); padding:23px 18px; border:1px solid #d7e5f7; color:#002e5d; }
+.campus-hero strong { font:700 27px Georgia,serif; display:block; }
+.campus-hero small { color:#536d90; }
+.campus-panel .mini { display:block; padding:10px 0; border-bottom:1px solid #e5ecf5; font-size:13px; }
+.campus-panel .mini:last-child { border-bottom:0; }
+@media(max-width:1000px){ .campus-layout{grid-template-columns:1fr}.campus-side{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media(max-width:760px){ #app{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"top" "main" "nav"} .nav{flex-direction:row;padding:6px;border-right:0;border-top:1px solid var(--line)} .nav::before{display:none}.top{min-height:75px;padding:12px 16px}.top h1{font-size:22px}.main,#app[data-page="month"] .main{padding:16px 12px 100px}.campus-side{grid-template-columns:1fr}.mo{padding:5px}.mo > div{min-height:65px;padding:4px;font-size:12px}.mo u{font-size:0;height:6px;padding:0} }
+
+
+/* Fix BYU Calendar header */
+.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    min-height: 85px;
+    padding: 18px 32px;
+}
+
+.top h1 {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 26px;
+    line-height: 1.2;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.top .ic {
+    flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+    .top {
+        padding: 14px 16px;
+    }
+
+    .top h1 {
+        font-size: 20px;
+    }
+}
+
+/* ==========================================
+   BYU CAMPUS DASHBOARD IMPROVEMENTS
+   ========================================== */
+
+/* Compact monthly calendar */
+.campus-calendar .mo {
+    padding: 12px;
+    gap: 4px;
+    border-radius: 14px;
+}
+
+.campus-calendar .mo > div {
+    min-height: 76px;
+    padding: 7px;
+    border: 1px solid #e3eaf4;
+    border-radius: 6px;
+    background: #ffffff;
+    transition: background 0.2s ease;
+}
+
+.campus-calendar .mo > div:hover {
+    background: #edf5ff;
+}
+
+.campus-calendar .mo .td {
+    background: #e7f1ff;
+    outline: 2px solid #1765b5;
+}
+
+.campus-calendar .mo > b {
+    padding: 9px 0;
+    font-size: 12px;
+    color: #536b8c;
+}
+
+.campus-calendar .mo u {
+    font-size: 10px;
+    padding: 3px 5px;
+    border-radius: 5px;
+}
+
+/* Campus photo */
+.campus-photo {
+    position: relative;
+    min-height: 165px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #002e5d, #3973b4);
+}
+
+.campus-photo img {
+    display: block;
+    width: 100%;
+    height: 165px;
+    object-fit: cover;
+}
+
+.campus-photo-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 24px 14px 12px;
+    background: linear-gradient(transparent, rgba(0, 30, 65, 0.85));
+    color: white;
+}
+
+.campus-photo-caption strong {
+    display: block;
+    font-size: 16px;
+}
+
+.campus-photo-caption small {
+    color: #e1edff;
+}
+
+/* Sidebar panels */
+.campus-panel {
+    padding: 18px;
+    border-radius: 14px;
+    background: white;
+    border: 1px solid #dbe5f0;
+    box-shadow: 0 5px 18px rgba(0, 46, 93, 0.05);
+}
+
+.campus-panel h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    color: #002e5d;
+}
+
+.campus-panel .mini {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 0;
+    border-bottom: 1px solid #e6edf6;
+    font-size: 13px;
+}
+
+.campus-panel .mini:last-child {
+    border-bottom: none;
+}
+
+.campus-panel .mini small {
+    color: #60738e;
+    font-size: 11px;
+}
+
+.campus-panel .mini b {
+    color: #092653;
+}
+
+.campus-panel .mini .event-category {
+    display: inline-block;
+    width: fit-content;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: #e2efff;
+    color: #124b90;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.campus-progress {
+    height: 7px;
+    background: #e7edf6;
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.campus-progress-fill {
+    height: 100%;
+    background: #1765b5;
+    border-radius: 20px;
+}
+
+.campus-panel .progress-label {
+    color: #60738e;
+    font-size: 12px;
+}
+
+@media (max-width: 760px) {
+    .campus-calendar .mo > div {
+        min-height: 54px;
+        padding: 4px;
+    }
+
+    .campus-calendar .mo u {
+        height: 5px;
+        padding: 0;
+        font-size: 0;
+    }
+}
+
+/* ========================================
+   BYU CALENDAR — VISUAL POLISH
+   ======================================== */
+
+/* Page background */
+body, #app, .main {
+    background: #f5f8fd;
+}
+
+/* Refined left sidebar */
+.nav {
+    background: linear-gradient(
+        180deg,
+        #e3efff 0%,
+        #f4f9ff 65%,
+        #ffffff 100%
+    );
+    border-right: 1px solid #d8e4f2;
+}
+
+.nav a {
+    border-radius: 12px;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.nav a:hover {
+    background: #d6e7fc;
+    transform: translateX(3px);
+}
+
+.nav a.on {
+    background: #124b90;
+    color: white;
+    box-shadow: 0 5px 14px rgba(0,46,93,0.18);
+}
+
+/* Cleaner top header */
+.top {
+    background: linear-gradient(
+        100deg,
+        #ffffff 20%,
+        #eaf3ff 100%
+    );
+    border-bottom: 1px solid #e1eaf5;
+}
+
+.top h1 {
+    color: #002e5d;
+    font-weight: 800;
+    letter-spacing: -0.7px;
+}
+
+/* More polished calendar container */
+.campus-calendar .mo {
+    background: #ffffff;
+    border: 1px solid #dce6f2;
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 8px 28px rgba(0,46,93,0.05);
+}
+
+/* Calendar day cells */
+.campus-calendar .mo > div {
+    background: #ffffff;
+    border: 1px solid #e6edf7;
+    border-radius: 9px;
+    min-height: 76px;
+    transition:
+        background 0.2s,
+        box-shadow 0.2s,
+        transform 0.2s;
+}
+
+.campus-calendar .mo > div:hover {
+    background: #edf5ff;
+    box-shadow: 0 3px 10px rgba(0,46,93,0.08);
+    transform: translateY(-1px);
+}
+
+/* Current day */
+.campus-calendar .mo .td {
+    background: #e8f2ff;
+    outline: 2px solid #1765b5;
+    outline-offset: -2px;
+}
+
+/* Sidebar cards */
+.campus-panel {
+    border-radius: 16px;
+    border: 1px solid #dce6f2;
+    background: white;
+    box-shadow: 0 7px 24px rgba(0,46,93,0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.campus-panel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0,46,93,0.09);
+}
+
+/* Campus photo */
+.campus-photo {
+    border-radius: 16px;
+    box-shadow: 0 7px 24px rgba(0,46,93,0.12);
+    transition: transform 0.25s;
+}
+
+.campus-photo:hover {
+    transform: translateY(-2px);
+}
+
+.campus-photo img {
+    height: 180px;
+}
+
+/* Floating Add button */
+.main button,
+.main .btn {
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s;
+}
+
+.main button:hover,
+.main .btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Smaller screens */
+@media (max-width: 760px) {
+    .campus-calendar .mo > div {
+        min-height: 54px;
+    }
+
+    .campus-photo img {
+        height: 150px;
+    }
+}
+
+/* ==========================================
+   BYU CALENDAR — LOGIN SCREEN
+   ========================================== */
+
+/* Login page background */
+body:has(#auth) {
+    background:
+        radial-gradient(
+            circle at 15% 20%,
+            #dcecff 0%,
+            transparent 35%
+        ),
+        linear-gradient(
+            135deg,
+            #f4f8ff 0%,
+            #e7f1ff 100%
+        );
+}
+
+/* Main login container */
+#auth {
+    max-width: 460px;
+    margin: auto;
+    padding: 36px;
+    background: #ffffff;
+    border: 1px solid #dce7f5;
+    border-radius: 22px;
+    box-shadow:
+        0 20px 60px rgba(0, 46, 93, 0.10);
+}
+
+/* Login heading */
+#auth h1,
+#auth h2 {
+    color: #002e5d;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+}
+
+/* Input fields */
+#auth input[type="email"],
+#auth input[type="password"],
+#auth input[type="text"] {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 1px solid #d4e2f2;
+    border-radius: 11px;
+    background: #f8fbff;
+    color: #092653;
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+}
+
+#auth input:focus {
+    outline: none;
+    border-color: #1765b5;
+    box-shadow: 0 0 0 3px rgba(23, 101, 181, 0.12);
+}
+
+/* Login buttons */
+#auth button {
+    border-radius: 11px;
+    font-weight: 700;
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s;
+}
+
+#auth button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(0, 46, 93, 0.12);
+}
+
+/* Mobile layout */
+@media (max-width: 600px) {
+    #auth {
+        width: calc(100% - 32px);
+        padding: 24px;
+        border-radius: 16px;
+    }
+}
+
+/* ==========================================
+   BYU SPLIT-SCREEN LOGIN
+   ========================================== */
+
+.byu-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+    max-width: none;
+    padding: 35px;
+    background: linear-gradient(135deg, #eaf3ff, #f8fbff);
+}
+
+.byu-login .login-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: min(100%, 1050px);
+    min-height: 650px;
+    background: white;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 24px 70px rgba(0, 46, 93, 0.13);
+}
+
+/* Left photo panel */
+.byu-login .login-photo {
+    position: relative;
+    background:
+        linear-gradient(
+            180deg,
+            rgba(0, 46, 93, 0.15),
+            rgba(0, 30, 65, 0.8)
+        ),
+        url("byu-campus.jpg") center / cover no-repeat;
+}
+
+.byu-login .login-photo-content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 35px;
+    color: white;
+}
+
+.byu-login .login-brand {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.byu-login .login-photo-bottom h2 {
+    font-family: Georgia, serif;
+    font-size: 38px;
+    line-height: 1.15;
+    margin-bottom: 15px;
+    color: white;
+}
+
+.byu-login .login-photo-bottom p {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #e5efff;
+}
+
+/* Right form panel */
+.byu-login .login-form-side {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 45px 55px;
+    background: white;
+}
+
+.byu-login .login-welcome {
+    text-align: left;
+    margin-bottom: 25px;
+}
+
+.byu-login .login-icon {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    background: #e4efff;
+    border-radius: 13px;
+    font-size: 23px;
+    margin-bottom: 18px;
+}
+
+.byu-login .login-eyebrow {
+    display: block;
+    color: #1765b5;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+}
+
+.byu-login .login-welcome h1 {
+    color: #002e5d;
+    font-size: 32px;
+    letter-spacing: -1px;
+    margin: 0 0 8px;
+}
+
+.byu-login .login-welcome p {
+    color: #667b96;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Tabs */
+.byu-login .login-tabs {
+    margin-bottom: 22px;
+    border-radius: 11px;
+    background: #eaf2fc;
+}
+
+/* Inputs */
+.byu-login form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.byu-login form > label:not(.login-remember) {
+    color: #4b6484;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+
+.byu-login form > input {
+    width: 100%;
+    min-height: 48px;
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    background: #f8fbff;
+    border: 1px solid #d7e3f2;
+    border-radius: 10px;
+    color: #092653;
+}
+
+.byu-login form > input:focus {
+    outline: none;
+    border-color: #1765b5;
+    box-shadow: 0 0 0 3px rgba(23, 101, 181, 0.12);
+}
+
+/* Remember checkbox */
+.byu-login .login-remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    color: #536b8c;
+    font-size: 12px;
+}
+
+.byu-login .login-remember input {
+    width: 17px;
+    height: 17px;
+    accent-color: #002e5d;
+}
+
+/* Buttons */
+.byu-login .login-submit {
+    width: 100%;
+    min-height: 46px;
+    background: #002e5d;
+    color: white;
+    border-radius: 11px;
+    font-weight: 700;
+}
+
+.byu-login .login-submit:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.byu-login .login-demo {
+    width: 100%;
+    min-height: 46px;
+    margin-top: 12px;
+    border-radius: 11px;
+    background: #e4efff;
+    color: #002e5d;
+    font-weight: 700;
+}
+
+.byu-login .login-footer {
+    margin-top: 24px;
+    color: #91a1b5;
+    font-size: 11px;
+    text-align: center;
+}
+
+.byu-login .login-note {
+    font-size: 12px;
+    color: #667b96;
+}
+
+/* Mobile responsive */
+@media (max-width: 760px) {
+    .byu-login {
+        padding: 16px;
+    }
+
+    .byu-login .login-container {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .byu-login .login-photo {
+        min-height: 180px;
+    }
+
+    .byu-login .login-photo-content {
+        padding: 20px;
+    }
+
+    .byu-login .login-photo-bottom h2 {
+        font-size: 25px;
+    }
+
+    .byu-login .login-form-side {
+        padding: 28px 24px;
+    }
+}
+
+/* ==========================================
+   FIX: BYU LOGIN SCREEN WIDTH & LAYOUT
+   ========================================== */
+
+/* Override old login width restrictions */
+.main.login.byu-login {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0;
+
+    min-height: 100vh;
+    height: auto;
+
+    margin: 0 !important;
+    padding: 32px !important;
+
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+/* Make the two-column card wide enough */
+.byu-login .login-container {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+
+    width: 100% !important;
+    max-width: 1080px !important;
+    min-width: 0;
+
+    min-height: 620px;
+    margin: 0 auto;
+
+    border-radius: 24px;
+    overflow: hidden;
+}
+
+/* Prevent either column from collapsing */
+.byu-login .login-photo,
+.byu-login .login-form-side {
+    min-width: 0;
+    width: auto;
+}
+
+/* Keep the login form a comfortable width */
+.byu-login .login-form-side {
+    padding: 48px 55px;
+}
+
+.byu-login .login-form-side form,
+.byu-login .login-tabs,
+.byu-login .login-demo {
+    width: 100%;
+    max-width: none;
+}
+
+/* Make input fields fit the form */
+.byu-login .login-form-side input[type="email"],
+.byu-login .login-form-side input[type="password"] {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Prevent old login styles from clipping text */
+.byu-login .login-photo-bottom h2 {
+    font-size: clamp(28px, 3vw, 40px);
+    overflow-wrap: normal;
+}
+
+.byu-login .login-photo-bottom p {
+    max-width: 340px;
+}
+
+/* Responsive layout */
+@media (max-width: 800px) {
+    .byu-login .login-container {
+        grid-template-columns: 1fr;
+    }
+
+    .byu-login .login-photo {
+        min-height: 220px;
+    }
+
+    .byu-login .login-form-side {
+        padding: 30px 24px;
+    }
+
+    .main.login.byu-login {
+        padding: 16px !important;
+    }
+}
+
+/* ========================================
+   BYU CAMPUS AESTHETIC — SIDEBAR
+   ======================================== */
+
+.nav {
+    position: relative;
+    background: linear-gradient(
+        180deg,
+        #e4f0ff 0%,
+        #f5f9ff 70%,
+        #ffffff 100%
+    );
+    padding-bottom: 270px;
+}
+
+.nav::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 16px;
+    height: 240px;
+    border-radius: 12px;
+    background:
+        url("byu-tower.jpg") center / cover no-repeat;
+    box-shadow: 0 8px 20px rgba(0,46,93,0.10);
+}
+
+@media (max-width: 760px) {
+    .nav {
+        padding-bottom: 6px;
+    }
+
+    .nav::after {
+        display: none;
+    }
+}
+
+/* BYU welcome header */
+.top {
+    min-height: 110px;
+    padding: 22px 34px;
+}
+
+.top h1 {
+    font-size: 29px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    color: #002e5d;
+}
+
+.top h1::after {
+    content: "Plan your week. Balance school, work, and everything else.";
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: #60738e;
+}
+
+/* BYU calendar polish */
+
+.campus-calendar .mo {
+    border: 1px solid #dce6f2;
+    border-radius: 14px;
+    background: #ffffff;
+    padding: 10px;
+    gap: 2px;
+}
+
+.campus-calendar .mo > div {
+    min-height: 74px;
+    border: 1px solid #edf1f7;
+    border-radius: 4px;
+    background: #ffffff;
+}
+
+.campus-calendar .mo > div:hover {
+    background: #edf5ff;
+}
+
+.campus-calendar .mo .td {
+    background: #e8f2ff;
+    outline: 2px solid #1765b5;
+    outline-offset: -2px;
+}
+
+/* Right sidebar widgets */
+.campus-panel {
+    border-radius: 14px;
+    border: 1px solid #dce6f2;
+    box-shadow: 0 5px 18px rgba(0,46,93,0.05);
+}
+
+.campus-panel h3 {
+    color: #002e5d;
+    font-weight: 800;
+}
+
+/* Campus image card */
+.campus-photo {
+    border-radius: 14px;
+    overflow: hidden;
+}
+
     </style>
   </head>
   <body>
@@ -2132,71 +3172,7 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
 <label for="pw">Password</label><input id="pw" type="password" required minlength="${c ? 8 : 1}" autocomplete="${c ? "new-password" : "current-password"}" oninput="chk()">
 <label style="display:flex;gap:8px;align-items:center"><input id="st" type="checkbox" ${remember ? "checked" : ""}> Stay logged in</label>
 <div id="er" class="err" role="status" aria-live="polite"></div><button class="btn" id="go" disabled>${c ? "Create account" : "Log in"}</button></form>
-${!useSB ? "<p>Live login requires your Supabase URL and public key.</p>" : ""}</div>`;
-      }
-      const normInterests = (str) => [
-        ...new Set(
-          String(str || "")
-            .split(",")
-            .map((x) => x.trim().toLowerCase())
-            .filter(Boolean),
-        ),
-      ];
-      async function saveInterests(list) {
-        const old = S.interests;
-        S.interests = list;
-        r();
-        if (live()) {
-          try {
-            const I = M.interests;
-            await q(sb.from(I.t).delete().eq(I.uid, S.uid));
-            if (list.length)
-              await q(
-                sb
-                  .from(I.t)
-                  .insert(list.map((v) => mk("interests", { uid: S.uid, val: v }))),
-              );
-          } catch (e) {
-            S.interests = old;
-            fail(e);
-            r();
-            return;
-          }
-        }
-        save();
-      }
-      function addInterests() {
-        const add = normInterests($("#int-new").value);
-        if (add.length) saveInterests([...new Set([...S.interests, ...add])]);
-      }
-      function removeInterest(i) {
-        saveInterests(S.interests.filter((_, j) => j !== i));
-      }
-      function interestsSection() {
-        return `<div class="kv" style="display:block;border-bottom:0"><span>Interests</span></div>
-          <div class="int-chips">${S.interests.map((t, i) => `<span class="int-chip">${esc(t)}<button type="button" onclick="removeInterest(${i})" aria-label="Remove ${esc(t)}">×</button></span>`).join("") || '<small style="color:var(--mut)">None yet</small>'}</div>
-          <div class="int-add"><input id="int-new" type="text" placeholder="Add interests, separated by commas" onkeydown="if(event.key==='Enter'){event.preventDefault();addInterests()}"><button type="button" class="add" onclick="addInterests()">Add</button></div>`;
-      }
-      // Month/day/year dropdowns start empty (a date picker would pre-select today).
-      // A hidden input with id=<id> holds the YYYY-MM-DD value the rest of the app reads.
-      function birthPicker(id, value, cb) {
-        const ok = parseBirthDate(value) ? value : "",
-          [y, m, d] = ok.split("-"),
-          months = [
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December",
-          ],
-          opt = (v, t, sel) =>
-            `<option value="${v}" ${String(sel) === String(v) ? "selected" : ""}>${t}</option>`,
-          thisYear = new Date().getFullYear(),
-          sel = (k, label, items, cur) =>
-            `<select id="${id}-${k}" aria-label="${label}" onchange="syncBirth('${id}');${cb}"><option value="">${label}</option>${items.join("")}</select>`;
-        return `<div style="display:flex;gap:8px">${sel("m", "Month", months.map((n, i) => opt(String(i + 1).padStart(2, "0"), n, m)))}${sel("d", "Day", Array.from({ length: 31 }, (_, i) => opt(String(i + 1).padStart(2, "0"), i + 1, d)))}${sel("y", "Year", Array.from({ length: thisYear - 1919 }, (_, i) => opt(thisYear - i, thisYear - i, y)))}</div><input type="hidden" id="${id}" value="${esc(ok)}">`;
-      }
-      function syncBirth(id) {
-        const v = ["y", "m", "d"].map((k) => $("#" + id + "-" + k).value),
-          date = v.join("-");
-        $("#" + id).value = v.every(Boolean) && parseBirthDate(date) ? date : "";
+<button class="btn alt" onclick="startDemo()">Try demo (no login)</button>${!useSB ? "<p>Live login requires your Supabase URL and public key. Demo changes are temporary.</p>" : ""}</div>`;
       }
       function chk() {
         $("#go").disabled = !(
@@ -2410,7 +3386,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
           hd = [...Array(7)].map((_, i) => L(ad(st, i), { weekday: "narrow" }));
         return shell(
           L(iso(f), { month: "long", year: "numeric" }),
-          seg("month") +
+          `<div class="campus-layout"><div class="campus-calendar">` + seg("month") +
             nv("month", "Month view") +
             `<div class="mo">${hd.map((h) => `<b>${h}</b>`).join("")}${cells
               .slice(
@@ -2431,7 +3407,107 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
                     "",
                   )}${it.length > 3 ? `<small>+${it.length - 3}</small>` : ""}</div>`;
               })
-              .join("")}</div>`,
+              .join("")}</div></div>
+<aside class="campus-side">
+
+  <!-- BYU Campus Image -->
+  <div class="campus-photo">
+    <img
+      src="byu-campus.jpg"
+      alt="BYU campus"
+    >
+   
+<div class="campus-photo-caption">
+  <strong>Life on Campus</strong>
+  <small>Stay focused. Stay inspired.</small>
+</div>
+
+  </div>
+
+  <!-- Weekly Task Progress -->
+  <div class="campus-panel">
+    <h3>This Week</h3>
+
+    ${(() => {
+      const weekTasks = S.items.filter(i =>
+        i.kind === "task" &&
+        i.date >= TODAY &&
+        i.date <= ad(TODAY, 7)
+      );
+
+      const completed = weekTasks.filter(i => i.done).length;
+      const total = weekTasks.length;
+      const percent = total
+        ? Math.round(completed / total * 100)
+        : 0;
+
+      return `
+        <div class="progress-label">
+          ${completed} of ${total} tasks completed
+        </div>
+
+        <div class="campus-progress">
+          <div
+            class="campus-progress-fill"
+            style="width:${percent}%"
+          ></div>
+        </div>
+
+        ${weekTasks
+          .filter(i => !i.done)
+          .slice(0, 5)
+          .map(i => `
+            <div class="mini">
+              <b>☐ ${esc(i.title)}</b>
+              <small>
+                ${L(i.date, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric"
+                })}
+              </small>
+            </div>
+          `).join("") || "<small>No outstanding tasks.</small>"}
+      `;
+    })()}
+
+  </div>
+
+  <!-- Upcoming Events -->
+  <div class="campus-panel">
+    <h3>Upcoming Events</h3>
+
+    ${S.items
+      .filter(i =>
+        i.kind === "event" &&
+        i.date >= TODAY
+      )
+      .sort((a, b) =>
+        (a.date + (a.time || "")).localeCompare(
+          b.date + (b.time || "")
+        )
+      )
+      .slice(0, 4)
+      .map(i => `
+        <div class="mini">
+          <b>${esc(i.title)}</b>
+          <small>
+            ${L(i.date, {
+              weekday: "short",
+              month: "short",
+              day: "numeric"
+            })}
+            ${i.time ? " · " + t12(i.time) : ""}
+          </small>
+          <span class="event-category">
+            ${esc(T[i.type] ? T[i.type][0] : "Event")}
+          </span>
+        </div>
+      `).join("") || "<small>No upcoming events.</small>"}
+
+  </div>
+</aside>
+</div>`,
           { nav: "c", fab: 1 },
         );
       }
