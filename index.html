@@ -2893,6 +2893,45 @@ body:has(#auth) {
             sb.from(U.t).select(scol(U.id, U.name)).eq(U.id, user.id).limit(1),
           );
         const md0 = user.user_metadata || {};
+        // Save calendar links collected during signup.
+        const calendarLinks = [
+          {
+            provider: "canvas",
+            feed_url: (md0.canvas_feed_url || "").trim(),
+            label: "Canvas",
+          },
+          {
+            provider: "learning_suite",
+            feed_url: (md0.learning_suite_feed_url || "").trim(),
+            label: "Learning Suite",
+          },
+        ]
+          .filter((calendar) => calendar.feed_url !== "")
+          .map((calendar) => ({
+            ...calendar,
+            user_id: user.id,
+          }));
+
+        if (calendarLinks.length > 0) {
+          const { error: calendarError } = await sb
+            .from("calendar_connections")
+            .upsert(calendarLinks, {
+              onConflict: "user_id,provider,feed_url",
+              ignoreDuplicates: true,
+            });
+
+          if (calendarError) throw calendarError;
+
+          // Remove the temporary signup copies after saving successfully.
+          const { error: metadataError } = await sb.auth.updateUser({
+            data: {
+              canvas_feed_url: null,
+              learning_suite_feed_url: null,
+            },
+          });
+
+          if (metadataError) throw metadataError;
+        }
         const seedInts = async (list) => {
           if (list && list.length)
             await q(
@@ -3068,7 +3107,68 @@ body:has(#auth) {
         return `<div class="main login"><div class="av">👤</div><h1>The Daily Blend</h1>
 ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the setup guide for missing tables or columns, then reload. If birth_date is missing, run birthday-setup.sql.</div>` : ""}
 <div class="seg"><a href="#login" class="${c ? "" : "on"}" onclick="LM='in';r()">Log in</a><a href="#login" class="${c ? "on" : ""}" onclick="LM='up';r()">Create account</a></div>
-<form onsubmit="event.preventDefault();auth()"><label for="u">Email address</label><input id="u" type="email" value="${esc(pendingEmail)}" required autocomplete="email" oninput="chk()">
+<form onsubmit="event.preventDefault();auth()">${c ? `<label for="su-name">Name</label><input id="su-name" type="text" required autocomplete="name" oninput="chk()">
+<label for="su-school">School</label><input id="su-school" type="text" required autocomplete="organization" oninput="chk()">
+<label for="su-major">Major</label><input id="su-major" type="text" required oninput="chk()">
+<label for="su-work">Work</label><input id="su-work" type="text" required oninput="chk()">
+<label>Date of birth</label>${birthPicker("su-birth", "", "chk()")}
+<h2>School calendars — optional</h2>
+<p style="font-size:13px;color:var(--mut)">
+  Save your calendar links for future importing.
+  Assignments and events will not be imported yet.
+  You can leave these fields blank.
+</p>
+
+<label for="su-canvas">Canvas calendar feed link</label>
+<input
+  id="su-canvas"
+  type="url"
+  placeholder="Paste your Canvas calendar feed URL"
+  autocomplete="off"
+  aria-describedby="su-canvas-help"
+/>
+
+<details id="su-canvas-help" style="margin:8px 0 16px;font-size:13px">
+  <summary style="cursor:pointer">
+    Where do I find my Canvas link?
+  </summary>
+  <ol>
+    <li>Sign into Canvas in another browser tab.</li>
+    <li>Open Calendar from the main navigation.</li>
+    <li>Click Calendar Feed in the calendar sidebar.</li>
+    <li>Copy the feed URL and paste it above.</li>
+  </ol>
+  <p>Use the calendar feed link, rather than the address of the Calendar page.</p>
+</details>
+
+<label for="su-learning-suite">Learning Suite calendar feed link</label>
+<input
+  id="su-learning-suite"
+  type="url"
+  placeholder="Paste a Learning Suite iCalendar feed URL"
+  autocomplete="off"
+  aria-describedby="su-learning-suite-help"
+/>
+
+<details id="su-learning-suite-help"
+  style="margin:8px 0 16px;font-size:13px">
+  <summary style="cursor:pointer">
+    Where do I find my Learning Suite link?
+  </summary>
+  <ol>
+    <li>Sign into Learning Suite in another browser tab.</li>
+    <li>Open the course you want to add.</li>
+    <li>Select Schedule, then Get iCalendar Feed.</li>
+    <li>Select the option to copy and paste the URL.</li>
+    <li>Copy that feed URL and paste it above.</li>
+  </ol>
+  <p>
+    Start with one course. Support for adding more course links is coming later.
+    Use the feed URL, rather than the course page address.
+  </p>
+</details>
+<label for="su-gender">Gender</label><select id="su-gender" required onchange="chk()"><option value="">Select…</option><option>Female</option><option>Male</option></select>
+<label for="su-interests">Interests</label><input id="su-interests" type="text" required placeholder="Separate with commas" oninput="chk()">` : ""}<label for="u">Email address</label><input id="u" type="email" value="${esc(pendingEmail)}" required autocomplete="email" oninput="chk()">
 <label for="pw">Password</label><input id="pw" type="password" required minlength="${c ? 8 : 1}" autocomplete="${c ? "new-password" : "current-password"}" oninput="chk()">
 <label style="display:flex;gap:8px;align-items:center"><input id="st" type="checkbox" ${remember ? "checked" : ""}> Stay logged in</label>
 <div id="er" class="err" role="status" aria-live="polite"></div><button class="btn" id="go" disabled>${c ? "Create account" : "Log in"}</button></form>
@@ -3113,6 +3213,8 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
                       major: $("#su-major").value.trim(),
                       gender: $("#su-gender").value,
                       interests: normInterests($("#su-interests").value),
+                      canvas_feed_url: $("#su-canvas").value.trim(),
+                      learning_suite_feed_url: $("#su-learning-suite").value.trim(),
                       birth_date: $("#su-birth").value || null,
                       age: $("#su-birth").value
                         ? ageFromBirthDate($("#su-birth").value)
