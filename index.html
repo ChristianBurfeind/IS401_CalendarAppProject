@@ -2150,6 +2150,12 @@ body:has(#auth) {
     overflow: hidden;
 }
 
+      /* The profile is a full page without the dashboard navigation sidebar. */
+      #app[data-page="profile"] {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas: "top" "main";
+      }
     </style>
   </head>
   <body>
@@ -2370,7 +2376,7 @@ body:has(#auth) {
       const nice = (e) => {
         const m = e.message || String(e);
         return /row-level security|permission denied/i.test(m)
-          ? "Access was denied. Check auth-profile-setup.sql and your signed-in account."
+          ? "Access was denied. Check scheduler-setup.sql and your signed-in account."
           : m;
       };
       const fail = (e) => {
@@ -2435,7 +2441,8 @@ body:has(#auth) {
         return /^\d\d:\d\d/.test(v) ? v.slice(0, 5) : v.slice(11, 16);
       };
       const dd = (v) => (v ? String(v).slice(0, 10) : "");
-      const ty = (v) => (T[v] ? v : "personal");
+      const ty = (v) => { const k = String(v || "").toLowerCase(); return T[k] ? k : "personal"; };
+      const readPriority = (v) => ({urgent: 1, standard: 2, flexible: 3}[String(v).toLowerCase()] || ([1,2,3].includes(+v) ? +v : 2));
       const tcand = (n) => {
         const a = [
           n,
@@ -2533,10 +2540,27 @@ body:has(#auth) {
         M = out;
         DBERR = probs;
       }
+      async function ensureUserCalendar(userId) {
+        const read = () => sb.from("calendars").select("calendar_id").eq("user_id", userId).maybeSingle();
+        const existing = await read();
+        if (existing.error) throw existing.error;
+        if (existing.data) return existing.data.calendar_id;
+        const created = await sb.from("calendars").insert({ user_id: userId }).select("calendar_id").single();
+        if (!created.error) return created.data.calendar_id;
+        if (created.error.code === "23505") {
+          const concurrent = await read();
+          if (concurrent.error) throw concurrent.error;
+          if (concurrent.data) return concurrent.data.calendar_id;
+        }
+        throw created.error;
+      }
       async function dbItem(it) {
-        if (!live()) return;
+        if (!live()) return true;
         try {
-          if (it._p) await it._p;
+          if (DBERR.length) throw new Error(DBERR.join(" "));
+          if (!S.uid) throw new Error("Log in before saving.");
+          const calendarId = await ensureUserCalendar(S.uid);
+          if (it._p) await it._p.catch(() => {});
           it._p = (async () => {
             const task = it.kind == "task",
               B = M[task ? "tasks" : "events"];
@@ -2578,11 +2602,14 @@ body:has(#auth) {
             let lastErr;
             for (const tm of modes) {
               try {
-                const row = build(tm);
+                const row = { ...build(tm), calendar_id: calendarId };
                 if (!it.rid) {
                   const r = await insRow(B.t, B.id, row);
                   it.rid = r[B.id];
-                } else await q(sb.from(B.t).update(row).eq(B.id, it.rid));
+                } else {
+                  const updated = await q(sb.from(B.t).update(row).eq(B.id, it.rid).select(B.id));
+                  if (!updated.length) throw new Error("Item was not updated. Reload and try again.");
+                }
                 TMODE = tm;
                 lastErr = null;
                 break;
@@ -2615,21 +2642,28 @@ body:has(#auth) {
             }
           })();
           await it._p;
+          return true;
         } catch (e) {
           fail(e);
+          return false;
+        } finally {
+          delete it._p;
         }
       }
       async function dbDel(it) {
-        if (!live()) return;
+        if (!live()) return true;
         try {
-          if (it._p) await it._p;
-          if (!it.rid) return;
+          if (it._p) await it._p.catch(() => {});
+          if (!it.rid) throw new Error("This item has not been saved yet.");
           const B = M[it.kind == "task" ? "tasks" : "events"];
           if (it.kind == "task")
             await q(sb.from(M.todo.t).delete().eq(M.todo.id, it.rid));
-          await q(sb.from(B.t).delete().eq(B.id, it.rid));
+          const removed = await q(sb.from(B.t).delete().eq(B.id, it.rid).select(B.id));
+          if (!removed.length) throw new Error("Item was not deleted. Reload and try again.");
+          return true;
         } catch (e) {
           fail(e);
+          return false;
         }
       }
       let WKNUM = false,
@@ -2848,7 +2882,7 @@ body:has(#auth) {
             end: "",
             loc: "",
             type: ty(r[MT.type]),
-            pri: +r[MT.pri] || 2,
+            pri: readPriority(r[MT.pri]),
             desc: r[MT.desc] || "",
             done: !!done[r[MT.id]],
             src: srcOf(r[MT.desc] || ""),
@@ -2863,7 +2897,7 @@ body:has(#auth) {
             end: tt(r[ME.end]),
             loc: r[ME.loc] || "",
             type: ty(r[ME.type]),
-            pri: +r[ME.pri] || 2,
+            pri: readPriority(r[ME.pri]),
             desc: r[ME.desc] || "",
             done: false,
             src: srcOf(r[ME.desc] || ""),
@@ -3079,12 +3113,18 @@ body:has(#auth) {
       };
       const trow = (i) =>
         `<div class="row ${i.done ? "done" : ""}"><input type="checkbox" ${i.done ? "checked" : ""} onclick="event.stopPropagation();tog('${i.id}')"><span class="t" onclick="openEv('${i.id}')">${esc(i.title)}</span><b class="p${i.pri}" title="${PN[i.pri]}">${PS[i.pri]}</b></div>`;
-      function tog(id) {
+      const itemBusy = new Set();
+      async function tog(id) {
+        if (itemBusy.has(id)) return;
         const i = S.items.find((x) => x.id == id);
-        i.done = !i.done;
-        save();
-        dbItem(i);
-        r();
+        if (!i) return;
+        itemBusy.add(id);
+        try {
+          const next = { ...i, done: !i.done };
+          if (await dbItem(next)) Object.assign(i, next);
+          save();
+          r();
+        } finally { itemBusy.delete(id); }
       }
       let pendingEmail =
         sessionStorage.getItem("scheduler_pending_email") || "";
@@ -3105,7 +3145,7 @@ body:has(#auth) {
       function login() {
         const c = LM === "up";
         return `<div class="main login"><div class="av">👤</div><h1>The Daily Blend</h1>
-${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the setup guide for missing tables or columns, then reload. If birth_date is missing, run birthday-setup.sql.</div>` : ""}
+${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the setup guide for missing tables or columns, then reload. If birth_date is missing, run tasks-events-update.sql.</div>` : ""}
 <div class="seg"><a href="#login" class="${c ? "" : "on"}" onclick="LM='in';r()">Log in</a><a href="#login" class="${c ? "on" : ""}" onclick="LM='up';r()">Create account</a></div>
 <form onsubmit="event.preventDefault();auth()">${c ? `<label for="su-name">Name</label><input id="su-name" type="text" required autocomplete="name" oninput="chk()">
 <label for="su-school">School</label><input id="su-school" type="text" required autocomplete="organization" oninput="chk()">
@@ -3326,7 +3366,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
           { nav: "c", fab: 1 },
         );
       }
-      function addSug(title, a, b, type) {
+      async function addSug(title, a, b, type) {
         const it = {
           id: uid(),
           kind: "event",
@@ -3340,8 +3380,8 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
           desc: "",
           done: false,
         };
+        if (!(await dbItem(it))) return;
         S.items.push(it);
-        dbItem(it);
         save();
         toast("Added to your calendar");
         r();
@@ -3562,7 +3602,7 @@ ${ev ? `<div style="display:flex;gap:8px"><div style="flex:1"><label>Start</labe
             )
             .join("")}</select>
 <label>Priority</label><select id="f-pri">${[1, 2, 3].map((p) => `<option value="${p}" ${DR.pri == p ? "selected" : ""}>${p} · ${PN[p]} ${PS[p]}</option>`).join("")}</select>
-<label>Description</label><textarea id="f-desc" rows="2">${esc(DR.desc)}</textarea><div class="err" id="er"></div><button class="btn" onclick="saveItem()">${it ? "Save changes" : "Add"}</button>`,
+<label>Description</label><textarea id="f-desc" rows="2">${esc(DR.desc)}</textarea><div class="err" id="er"></div><button id="save-item" class="btn" onclick="saveItem()">${it ? "Save changes" : "Add"}</button>`,
           {
             left: '<button class="ic" onclick="DR=null;E=null;history.length>1?history.back():go(\'summary\')" aria-label="Close">✕</button>',
             right: "<span></span>",
@@ -3583,12 +3623,16 @@ ${ev ? `<div style="display:flex;gap:8px"><div style="flex:1"><label>Start</labe
           desc: g("desc") ?? DR.desc,
         };
       }
-      function saveItem() {
+      let savingItem = false;
+      async function saveItem() {
+        if (savingItem) return;
         rd();
         if (!DR.title.trim())
           return ($("#er").textContent = "Please enter a title.");
         if (!DR.date) return ($("#er").textContent = "Please choose a date.");
         const ev = AK == "event";
+        if (ev && (!DR.time || !DR.end))
+          return ($("#er").textContent = "Please enter both a start time and an end time.");
         if (ev && DR.end && mins(DR.end) <= mins(DR.time))
           return ($("#er").textContent = "End time must be after start time.");
         const o = {
@@ -3601,22 +3645,33 @@ ${ev ? `<div style="display:flex;gap:8px"><div style="flex:1"><label>Start</labe
           o.end = "";
           o.loc = "";
         }
-        let it;
-        if (E) {
-          const i = S.items.findIndex((x) => x.id == E);
-          S.items[i] = { ...S.items[i], ...o };
-          it = S.items[i];
-        } else {
-          it = { ...o, id: uid(), done: false };
-          S.items.push(it);
+        const previous = E ? S.items.find((x) => x.id == E) : null;
+        if (E && !previous) return ($("#er").textContent = "Item no longer exists. Reload and try again.");
+        const it = previous ? { ...previous, ...o } : { ...o, id: uid(), done: false };
+        const button = $("#save-item");
+        savingItem = true;
+        if (button) { button.disabled = true; button.textContent = "Saving…"; }
+        try {
+          if (!(await dbItem(it))) {
+            // Keep the ID if the task row saved but its completion record failed.
+            // Retrying updates that row instead of creating a duplicate.
+            DR.rid = it.rid;
+            $("#er").textContent = "Could not finish saving. Your draft is still here. Check the error and try again.";
+            return;
+          }
+          if (previous) Object.assign(previous, it);
+          else S.items.push(it);
+          D = o.date;
+          const editing = !!E;
+          E = null;
+          DR = null;
+          save();
+          toast(editing ? "Changes saved" : ev ? "Event saved to calendar" : "Task saved");
+          go(ev ? "day" : "todo");
+        } finally {
+          savingItem = false;
+          if (button?.isConnected) { button.disabled = false; button.textContent = E ? "Save changes" : "Add"; }
         }
-        dbItem(it);
-        D = o.date;
-        E = null;
-        DR = null;
-        save();
-        toast(ev ? "Event added to calendar" : "Task added");
-        go(ev ? "day" : "todo");
       }
       function openEv(id) {
         const i = S.items.find((x) => x.id == id),
@@ -3631,13 +3686,18 @@ ${ev ? `<div style="display:flex;gap:8px"><div style="flex:1"><label>Start</labe
 <div style="display:flex;gap:8px"><button class="btn alt" onclick="E='${i.id}';DR=null;go('add')">✎ Edit</button><button class="btn del" onclick="delItem('${i.id}')">Delete</button></div></div>`;
         $("#app").appendChild(o);
       }
-      function delItem(id) {
+      async function delItem(id) {
+        if (itemBusy.has(id)) return;
         const d = S.items.find((i) => i.id == id);
-        if (d) dbDel(d);
-        S.items = S.items.filter((i) => i.id != id);
-        save();
-        toast("Deleted");
-        r();
+        if (!d) return;
+        itemBusy.add(id);
+        try {
+          if (!(await dbDel(d))) return;
+          S.items = S.items.filter((i) => i.id != id);
+          save();
+          toast("Deleted");
+          r();
+        } finally { itemBusy.delete(id); }
       }
       let CAT = [
         [
@@ -3761,7 +3821,7 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
           { nav: "d" },
         );
       }
-      function addDisc(i) {
+      async function addDisc(i) {
         const c = CAT[i],
           it = {
             id: uid(),
@@ -3776,8 +3836,8 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
             desc: c[6],
             done: false,
           };
+        if (!(await dbItem(it))) return;
         S.items.push(it);
-        dbItem(it);
         save();
         toast("Added to your calendar");
         r();
@@ -3817,6 +3877,15 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
             left: '<button class="ic" onclick="history.length>1?history.back():go(\'summary\')" aria-label="Back">‹</button>',
           },
         );
+      }
+      function normInterests(value) {
+        return [...new Set(String(value || "").split(",").map(x => x.trim().toLowerCase()).filter(Boolean))];
+      }
+      function birthPicker(id, value, onChange) {
+        return `<input id="${esc(id)}" type="date" value="${esc(value || "")}" max="${iso(new Date())}" oninput="${esc(onChange || "")}">`;
+      }
+      function interestsSection() {
+        return `<div class="kv"><span>Interests</span><div class="profile-field-value"><b>${esc((S.interests || []).join(", ")) || "—"}</b>${fieldPencil("interests", "Interests")}</div></div>`;
       }
       function profilePictureButton() {
         return `<button type="button" class="av profile-photo-button" onclick="openPicture()" aria-label="Change profile picture or avatar" title="Change profile picture or avatar">
@@ -4006,7 +4075,9 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
       function prof() {
         const p = S.prof;
         const fields = PROFILE_FIELDS.map(([field, label]) => {
-          if (field === "interests") return PE ? "" : interestsSection();
+          if (field === "interests") return PE
+            ? `<label for="p-interests">Interests (comma-separated)</label><input id="p-interests" type="text" value="${esc((S.interests || []).join(", "))}">`
+            : interestsSection();
           if (field === "age") {
             if (PE) return "";
             const a = ageFromBirthDate(p.birthDate) ?? p.age;
@@ -4149,7 +4220,7 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
             "Choose a valid date of birth that is not in the future.";
           return;
         }
-        const ints = S.interests;
+        const ints = normInterests($("#p-interests")?.value ?? S.interests.join(", "));
         const button = $("#save-profile");
         if (button?.disabled) return;
         if (button) button.disabled = true;
