@@ -4152,11 +4152,21 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
             0,
           );
 
-          status.textContent =
-            `${providerName} refreshed: ` +
-            `${data.tasksSaved ?? 0} tasks and ` +
-            `${data.eventsSaved ?? 0} events saved or updated.` +
-            (skippedCount ? ` ${skippedCount} entries skipped.` : "");
+          const failures = (data.results || []).filter(
+          (result) => !result.success,
+        );
+
+        status.textContent =
+          `${providerName}: ${data.connectionsRefreshed ?? 0} links refreshed. ` +
+          `${data.tasksSaved ?? 0} tasks and ` +
+          `${data.eventsSaved ?? 0} events saved or updated.` +
+          (skippedCount ? ` ${skippedCount} entries skipped.` : "") +
+          (failures.length
+            ? " Failed links: " +
+              failures
+                .map((result) => `${result.label}: ${result.error}`)
+                .join("; ")
+            : "");
 
           try {
             await loadSB();
