@@ -4063,21 +4063,30 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
             style="font-size:13px"
           ></p>
 
-          <p style="color:var(--mut);font-size:13px">
-            Canvas importing is available below. Learning Suite importing
-            is coming next.
-          </p>
-          <p style="color:var(--mut);font-size:13px">
-            Import events and assignment deadlines from your saved Canvas
-            calendar link. Import again to check for updates.
-          </p>
           <button
             class="btn"
             type="button"
-            onclick="importCanvasCalendar(this)"
+            data-calendar-refresh
+            onclick="refreshSchoolCalendar('canvas')"
           >
-            Import Canvas calendar
+            Refresh Canvas
           </button>
+
+          <button
+            class="btn alt"
+            type="button"
+            data-calendar-refresh
+            onclick="refreshSchoolCalendar('learning_suite')"
+          >
+            Refresh Learning Suite
+          </button>
+
+          <p
+            id="calendar-import-status"
+            role="status"
+            aria-live="polite"
+            style="font-size:13px"
+          ></p>
           <p
             id="calendar-import-status"
             role="status"
