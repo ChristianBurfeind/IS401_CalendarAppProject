@@ -3984,6 +3984,89 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
           </p>
 
           <h2>School calendars</h2>
+
+          <p style="color:var(--mut);font-size:13px">
+            Add calendar links anytime. Saving a link does not import its
+            events. You can leave either field blank.
+          </p>
+
+          <label for="settings-canvas-link">Canvas calendar feed link</label>
+          <input
+            id="settings-canvas-link"
+            type="url"
+            placeholder="Paste your Canvas calendar feed URL"
+            autocomplete="off"
+          />
+
+          <details style="margin:8px 0 16px;font-size:13px">
+            <summary style="cursor:pointer">
+              Where do I find my Canvas link?
+            </summary>
+            <ol>
+              <li>Sign into Canvas in another browser tab.</li>
+              <li>Open Calendar from the main navigation.</li>
+              <li>Click Calendar Feed in the calendar sidebar.</li>
+              <li>Copy the feed URL and paste it above.</li>
+            </ol>
+            <p>Use the calendar feed link, rather than the Calendar page address.</p>
+          </details>
+
+          <label for="settings-learning-suite-link">
+            Learning Suite calendar feed link
+          </label>
+          <input
+            id="settings-learning-suite-link"
+            type="url"
+            placeholder="Paste a Learning Suite iCalendar feed URL"
+            autocomplete="off"
+          />
+
+          <label for="settings-course-label">
+            Learning Suite course name — optional
+          </label>
+          <input
+            id="settings-course-label"
+            type="text"
+            placeholder="For example, IS 401"
+            maxlength="120"
+          />
+
+          <details style="margin:8px 0 16px;font-size:13px">
+            <summary style="cursor:pointer">
+              Where do I find my Learning Suite link?
+            </summary>
+            <ol>
+              <li>Sign into Learning Suite in another browser tab.</li>
+              <li>Open the course you want to add.</li>
+              <li>Select Schedule, then Get iCalendar Feed.</li>
+              <li>Select the option to copy and paste the URL.</li>
+              <li>Copy the feed URL and paste it above.</li>
+            </ol>
+            <p>
+              Add one course link at a time. After saving, repeat for other
+              courses. Use the feed URL, rather than the course page address.
+            </p>
+          </details>
+
+          <button
+            class="btn alt"
+            type="button"
+            onclick="saveSettingsCalendarLinks(this)"
+          >
+            Save calendar links
+          </button>
+
+          <p
+            id="calendar-links-status"
+            role="status"
+            aria-live="polite"
+            style="font-size:13px"
+          ></p>
+
+          <p style="color:var(--mut);font-size:13px">
+            Canvas importing is available below. Learning Suite importing
+            is coming next.
+          </p>
           <p style="color:var(--mut);font-size:13px">
             Import events and assignment deadlines from your saved Canvas
             calendar link. Import again to check for updates.
@@ -4006,6 +4089,103 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
             left: '<button class="ic" onclick="history.length>1?history.back():go(\'summary\')" aria-label="Back">‹</button>',
           },
         );
+      }
+      async function saveSettingsCalendarLinks(button) {
+        const status = document.getElementById("calendar-links-status");
+        const canvasInput = document.getElementById("settings-canvas-link");
+        const learningInput = document.getElementById(
+          "settings-learning-suite-link",
+        );
+        const labelInput = document.getElementById("settings-course-label");
+
+        button.disabled = true;
+        status.textContent = "Saving…";
+
+        try {
+          const entries = [
+            {
+              provider: "canvas",
+              feed_url: canvasInput.value.trim(),
+              label: "Canvas",
+            },
+            {
+              provider: "learning_suite",
+              feed_url: learningInput.value.trim(),
+              label: labelInput.value.trim() || "Learning Suite",
+            },
+          ].filter((entry) => entry.feed_url !== "");
+
+          if (!entries.length) {
+            throw new Error("Paste at least one calendar feed link.");
+          }
+
+          for (const entry of entries) {
+            let url;
+
+            try {
+              url = new URL(entry.feed_url);
+            } catch {
+              throw new Error(
+                `The ${entry.provider === "canvas" ? "Canvas" : "Learning Suite"} link is not a valid URL.`,
+              );
+            }
+
+            if (url.protocol === "webcal:") {
+              url.protocol = "https:";
+            }
+
+            if (
+              url.protocol !== "https:" ||
+              url.username ||
+              url.password ||
+              url.port
+            ) {
+              throw new Error("Use an HTTPS or webcal calendar feed link.");
+            }
+
+            if (
+              entry.provider === "canvas" &&
+              url.hostname !== "byu.instructure.com"
+            ) {
+              throw new Error("Use your BYU Canvas calendar feed link.");
+            }
+
+            entry.feed_url = url.href;
+          }
+
+          const { data: authData, error: authError } =
+            await sb.auth.getUser();
+
+          if (authError || !authData.user) {
+            throw new Error("Please log in before saving calendar links.");
+          }
+
+          const rows = entries.map((entry) => ({
+            ...entry,
+            user_id: authData.user.id,
+          }));
+
+          const { error } = await sb
+            .from("calendar_connections")
+            .upsert(rows, {
+              onConflict: "user_id,provider,feed_url",
+              ignoreDuplicates: true,
+            });
+
+          if (error) throw error;
+
+          canvasInput.value = "";
+          learningInput.value = "";
+          labelInput.value = "";
+
+          status.textContent =
+            "Calendar links saved. Links already saved were kept without duplicates.";
+        } catch (error) {
+          status.textContent =
+            error instanceof Error ? error.message : String(error);
+        } finally {
+          button.disabled = false;
+        }
       }
       async function importCanvasCalendar(button) {
         const status = document.getElementById("calendar-import-status");
