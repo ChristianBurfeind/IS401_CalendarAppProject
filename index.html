@@ -3856,27 +3856,115 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
       function sett() {
         return shell(
           "Settings",
-          `<div class="sw">Notifications ${tgl("notif")}</div><div class="sw">Default view ${sel(
+          `<div class="sw">Notifications ${tgl("notif")}</div>
+          <div class="sw">Default view ${sel(
             "view",
             [
               ["day", "Day"],
               ["week", "Week"],
               ["month", "Month"],
             ],
-          )}</div><div class="sw">Week starts on ${sel("wk", [
+          )}</div>
+          <div class="sw">Week starts on ${sel("wk", [
             [1, "Monday"],
             [0, "Sunday"],
-          ])}</div><div class="sw">Theme ${sel("theme", [
+          ])}</div>
+          <div class="sw">Theme ${sel("theme", [
             ["royal", "Royal"],
             ["dark", "Dark"],
             ["forest", "Forest"],
             ["plum", "Plum"],
-          ])}</div><div class="sw">In-calendar suggestions ${tgl("sug")}</div><p style="color:var(--mut);font-size:12px">Reminders: homework due within 24 hours and social events within 4 hours show on your Summary page.</p>`,
+          ])}</div>
+          <div class="sw">In-calendar suggestions ${tgl("sug")}</div>
+
+          <p style="color:var(--mut);font-size:12px">
+            Reminders: homework due within 24 hours and social events
+            within 4 hours show on your Summary page.
+          </p>
+
+          <h2>School calendars</h2>
+          <p style="color:var(--mut);font-size:13px">
+            Import events and assignment deadlines from your saved Canvas
+            calendar link. Import again to check for updates.
+          </p>
+          <button
+            class="btn"
+            type="button"
+            onclick="importCanvasCalendar(this)"
+          >
+            Import Canvas calendar
+          </button>
+          <p
+            id="calendar-import-status"
+            role="status"
+            aria-live="polite"
+            style="font-size:13px"
+          ></p>`,
           {
             nav: "c",
             left: '<button class="ic" onclick="history.length>1?history.back():go(\'summary\')" aria-label="Back">‹</button>',
           },
         );
+      }
+      async function importCanvasCalendar(button) {
+        const status = document.getElementById("calendar-import-status");
+
+        button.disabled = true;
+        button.textContent = "Importing…";
+        status.textContent = "Reading your saved Canvas calendar…";
+
+        try {
+          const { data, error } = await sb.functions.invoke(
+            "import-calendar",
+            { body: {} },
+          );
+
+          if (error) {
+            let message = error.message;
+
+            if (error.context instanceof Response) {
+              try {
+                const details = await error.context.json();
+                message = details.error || message;
+
+                if (details.details) {
+                  message += " " + details.details;
+                }
+              } catch {
+                // Keep the original error if the response isn't JSON.
+              }
+            }
+
+            throw new Error(message);
+          }
+
+          if (!data || data.error || typeof data.saved !== "number") {
+            throw new Error(data?.error || "Unexpected response from the importer.");
+          }
+
+          const skippedCount = Object.values(data.skipped || {}).reduce(
+            (total, count) => total + Number(count),
+            0,
+          );
+
+          status.textContent =
+            `${data.saved} calendar entries saved or updated.` +
+            (skippedCount ? ` ${skippedCount} entries skipped.` : "");
+
+          try {
+            await loadSB();
+          } catch {
+            status.textContent +=
+              " Events were saved, but the app could not reload them. Refresh the page.";
+          }
+        } catch (error) {
+          status.textContent =
+            "Import failed: " +
+            (error instanceof Error ? error.message : String(error));
+        } finally {
+          button.disabled = false;
+          button.textContent = "Import Canvas calendar";
+        }
       }
       function normInterests(value) {
         return [...new Set(String(value || "").split(",").map(x => x.trim().toLowerCase()).filter(Boolean))];
