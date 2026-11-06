@@ -3332,11 +3332,16 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
         const ev = evs(D);
         const allDayEvents = ev.filter((e) => e.allDay);
         const timedEvents = ev.filter((e) => !e.allDay);
+        const startHour = Math.min(
+          6,
+          ...timedEvents.map((e) => Math.floor(mins(e.time) / 60)),
+        );
 
         let g = "";
 
-        for (let h = 6; h <= 22; h++) {
-          g += `<i style="top:${(h - 6) * 48}px">${t12(h + ":00")}</i>`;
+        for (let h = startHour; h <= 24; h++) {
+          const label = h === 24 ? "00:00" : h + ":00";
+          g += `<i style="top:${(h - startHour) * 48}px">${t12(label)}</i>`;
         }
 
         const blk = (e) => {
@@ -3347,7 +3352,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
             <div
               class="ev"
               style="
-                top:${((s - 360) / 60) * 48 + 1}px;
+                top:${((s - startHour * 60) / 60) * 48 + 1}px;
                 height:${Math.max(24, ((en - s) / 60) * 48 - 3)}px;
                 background:${T[e.type][1]}
               "
@@ -3370,7 +3375,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
         const sg = !S.set.sug
           ? ""
           : (free(12)
-              ? `<div class="sug" style="top:${6 * 48 + 2}px">
+              ? `<div class="sug" style="top:${(12 - startHour) * 48 + 2}px">
                   🍽 Lunch: Café Rio, 0.3 mi
                   <button class="add"
                     onclick="addSug('Lunch at Café Rio','12:00','13:00','personal')">
@@ -3379,7 +3384,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
                 </div>`
               : "") +
             (free(19)
-              ? `<div class="sug" style="top:${13 * 48 + 2}px">
+              ? `<div class="sug" style="top:${(19 - startHour) * 48 + 2}px">
                   ⚽ BYU Soccer Game, 7 pm
                   <button class="add"
                     onclick="addSug('BYU Soccer Game','19:00','21:00','social')">
@@ -3430,7 +3435,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
             <div class="dg">
               <div>
                 ${allDaySection}
-                <div class="grid">
+                <div class="grid" style="height:${(24 - startHour) * 48}px">
                   ${g}
                   ${sg}
                   ${timedEvents.map(blk).join("")}
