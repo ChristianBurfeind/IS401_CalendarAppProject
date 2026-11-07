@@ -2156,6 +2156,130 @@ body:has(#auth) {
         grid-template-rows: auto minmax(0, 1fr);
         grid-template-areas: "top" "main";
       }
+
+      .type-picker { position: relative; }
+      #type-options:not([hidden]) { position: absolute; z-index: 30; top: 100%; left: 0; right: 0; max-height: 220px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--ink); box-shadow: 0 8px 24px #0002; }
+      .type-option, .type-empty { padding: 10px 14px; overflow-wrap: anywhere; }
+      .type-option { cursor: pointer; }
+      .type-option:hover, .type-option[aria-selected="true"] { background: var(--acc); }
+      #type-help { display: block; color: var(--mut); margin: 6px 0 14px; }
+      .all-day-toggle { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+      .all-day-toggle input { width: 20px; height: 20px; margin: 0; }
+      .all-day-events { margin: 12px 0 20px; padding: 12px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+      .all-day-events h2 { margin: 0 0 8px; }
+      .optional-label { color: var(--mut); font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: normal; }
+      .required-star { color: #b42318; }
+      .required-label { color: #b42318; font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: normal; }
+      .signup-note, .signup-field-help { color: var(--mut); font-size: 13px; line-height: 1.5; }
+      .signup-field-help { display: block; margin: 4px 0 8px; }
+      #auth-form input::placeholder { font-size: 13px; }
+      @media (max-width: 380px) { #auth-form input::placeholder { font-size: 11px; } }
+      #auth-form .signup-invalid { border: 2px solid #b42318 !important; outline-color: #b42318; }
+      .signup-field-error { color: #b42318; font-size: 13px; line-height: 1.4; margin: 4px 0 12px; }
+      #go.is-incomplete { background: #66758b; color: #fff; cursor: pointer; }
+      /* Keep mobile tabs within the visible viewport, above the device safe area. */
+      @media (max-width: 760px) {
+        #app {
+          height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+          height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        }
+        #app > .nav {
+          position: fixed;
+          inset: auto 0 0;
+          z-index: 50;
+          box-sizing: border-box;
+          min-height: calc(64px + env(safe-area-inset-bottom, 0px));
+          padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
+          align-items: center;
+          gap: 4px;
+          border-top: 1px solid var(--line);
+          box-shadow: 0 -3px 14px #002e5d12;
+        }
+        #app > .nav a {
+          min-height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transform: none;
+        }
+        #app:has(> .nav) > .main {
+          padding-bottom: calc(152px + env(safe-area-inset-bottom, 0px));
+          scroll-padding-bottom: calc(152px + env(safe-area-inset-bottom, 0px));
+        }
+        #app > .fab {
+          bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+          right: max(16px, env(safe-area-inset-right, 0px));
+        }
+      }
+      @media (max-width: 760px) {
+        body.mobile-dashboard {
+          height: 100dvh;
+          min-height: 0;
+          overflow: hidden;
+        }
+        #app.mobile-dashboard {
+          position: fixed;
+          top: var(--mobile-viewport-top, 0px);
+          left: 0;
+          right: 0;
+          height: var(--mobile-viewport-height, 100dvh);
+          min-height: 0;
+          padding-top: env(safe-area-inset-top, 0px);
+          box-sizing: border-box;
+          overflow: hidden;
+          grid-template-rows: auto minmax(0, 1fr);
+          grid-template-areas: "top" "main";
+        }
+        #app.mobile-dashboard > .main {
+          min-height: 0;
+          overflow: auto;
+          -webkit-overflow-scrolling: touch;
+          padding-bottom: 20px;
+          scroll-padding-bottom: 20px;
+        }
+        #app.mobile-dashboard > .nav {
+          /* Overlay inside the fixed viewport shell, outside the scrolling panel. */
+          position: absolute;
+          inset: auto max(12px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+          z-index: 50;
+          min-height: 64px;
+          padding: 6px;
+          border: 1px solid var(--line);
+          border-radius: 32px;
+          background: var(--card);
+          box-shadow: 0 8px 28px #002e5d30;
+          isolation: isolate;
+        }
+        #app.mobile-dashboard > .nav a {
+          border-radius: 26px;
+          min-width: 0;
+          font-size: 12px;
+        }
+        #app.mobile-dashboard > .nav::before,
+        #app.mobile-dashboard > .nav::after { display: none; }
+        #app.mobile-dashboard > .fab {
+          position: absolute;
+          bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+          right: max(16px, env(safe-area-inset-right, 0px));
+          margin: 0;
+          z-index: 51;
+        }
+        #app.mobile-dashboard > .main {
+          padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+          scroll-padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+        }
+        #app.mobile-dashboard:has(> .fab) > .main {
+          padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
+          scroll-padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
+        }
+        #app.mobile-dashboard .wk {
+          align-items: stretch;
+        }
+        #app.mobile-dashboard .wk > div {
+          min-height: 140px;
+          height: auto;
+        }
+      }
     </style>
   </head>
   <body>
@@ -2281,6 +2405,7 @@ body:has(#auth) {
       const init = () => ({
         uid: null,
         interests: [],
+        customTypes: [],
         accounts: {},
         user: null,
         stay: false,
@@ -2363,6 +2488,7 @@ body:has(#auth) {
           date: "Date",
           start: "Start_Time",
           end: "End_Time",
+          allDay: "is_all_day",
           loc: "Location",
           type: "Type",
           pri: "Priority",
@@ -2441,7 +2567,66 @@ body:has(#auth) {
         return /^\d\d:\d\d/.test(v) ? v.slice(0, 5) : v.slice(11, 16);
       };
       const dd = (v) => (v ? String(v).slice(0, 10) : "");
-      const ty = (v) => { const k = String(v || "").toLowerCase(); return T[k] ? k : "personal"; };
+      const cleanType = value => String(value || "").trim().replace(/\s+/g, " ");
+      const typeKey = value => cleanType(value).toLowerCase();
+      const ty = value => {
+        const label = cleanType(value), key = typeKey(label);
+        return Object.hasOwn(T, key) ? key : (S.customTypes || []).find(saved => typeKey(saved) === key) || label || "personal";
+      };
+      const typeInfo = value => {
+        const key = typeKey(value);
+        return Object.hasOwn(T, key) ? T[key] : [cleanType(value) || "Personal", "#526d91"];
+      };
+      function typeChoices(query = "") {
+        const seen = new Set();
+        return [...Object.keys(T), ...(S.customTypes || []), ...S.items.map(i => i.type)]
+          .filter(value => {
+            const key = typeKey(value);
+            if (!key || seen.has(key)) return false;
+            seen.add(key); return true;
+          }).map(value => typeInfo(value)[0])
+          .filter(label => typeKey(label).includes(typeKey(query)));
+      }
+      let typeActive = -1;
+      function renderTypeChoices(showAll = false) {
+        const input = $("#f-type"), list = $("#type-options");
+        if (!input || !list) return;
+        const labels = typeChoices(showAll ? "" : input.value);
+        typeActive = -1;
+        input.removeAttribute("aria-activedescendant");
+        list.innerHTML = labels.map((label, index) => `<div id="type-option-${index}" role="option" aria-selected="false" class="type-option" data-label="${esc(label)}" onmousedown="event.preventDefault()" onclick="selectType(this.dataset.label)">${esc(label)}</div>`).join("") || '<div class="type-empty">New type — saved when you save this item.</div>';
+        list.hidden = false; input.setAttribute("aria-expanded", "true");
+      }
+      function closeTypeChoices() {
+        const input = $("#f-type"), list = $("#type-options");
+        if (list) list.hidden = true;
+        if (input) { input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant"); }
+      }
+      function selectType(label) {
+        const input = $("#f-type"); input.value = label;
+        closeTypeChoices(); input.focus(); closeTypeChoices();
+      }
+      function typeKeydown(event) {
+        const input = event.target, list = $("#type-options");
+        if (event.key === "Escape") { event.preventDefault(); closeTypeChoices(); return; }
+        if (event.key === "Tab") { closeTypeChoices(); return; }
+        if (event.key === "Enter" && !list.hidden && typeActive >= 0) {
+          event.preventDefault(); selectType(list.querySelectorAll('[role="option"]')[typeActive].dataset.label); return;
+        }
+        if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
+        event.preventDefault(); if (list.hidden) renderTypeChoices();
+        const options = [...list.querySelectorAll('[role="option"]')];
+        if (!options.length) return;
+        typeActive = event.key === "ArrowDown" ? (typeActive + 1) % options.length : (typeActive <= 0 ? options.length - 1 : typeActive - 1);
+        options.forEach((option, index) => option.setAttribute("aria-selected", String(index === typeActive)));
+        input.setAttribute("aria-activedescendant", options[typeActive].id);
+        options[typeActive].scrollIntoView({block: "nearest"});
+      }
+      function typeField(value) {
+        return `<label for="f-type">Type</label><div class="type-picker" onfocusout="if(!this.contains(event.relatedTarget))closeTypeChoices()">
+          <input id="f-type" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="type-options" aria-describedby="type-help" autocomplete="off" maxlength="20" value="${esc(typeInfo(value)[0])}" onfocus="renderTypeChoices(true)" oninput="renderTypeChoices()" onkeydown="typeKeydown(event)">
+          <div id="type-options" role="listbox" aria-label="Suggested types" hidden></div></div><small id="type-help">Choose a type or enter your own. Previously used types are saved to your account.</small>`;
+      }
       const readPriority = (v) => ({urgent: 1, standard: 2, flexible: 3}[String(v).toLowerCase()] || ([1,2,3].includes(+v) ? +v : 2));
       const tcand = (n) => {
         const a = [
@@ -2585,8 +2770,9 @@ body:has(#auth) {
                     uid: S.uid,
                     title: it.title,
                     date: it.date,
-                    start: ts(it.time),
-                    end: ts(it.end),
+                    start: it.allDay ? null : ts(it.time),
+                    end: it.allDay ? null : ts(it.end),
+                    allDay: !!it.allDay,
                     loc: it.loc || "",
                     type: it.type,
                     pri: +it.pri,
@@ -2642,6 +2828,7 @@ body:has(#auth) {
             }
           })();
           await it._p;
+          S.customTypes = [...new Set([...(S.customTypes || []), ty(it.type)])];
           return true;
         } catch (e) {
           fail(e);
@@ -2797,6 +2984,9 @@ body:has(#auth) {
           q(sb.from(MT.t).select("*").eq(MT.uid, id)),
           q(sb.from(ME.t).select("*").eq(ME.uid, id)),
         ]);
+        const history = await sb.from("scheduler_types").select("name").eq("user_id", id).order("name");
+        if (history.error) throw new Error("Could not load saved types. Run custom-types-setup.sql once, then reload. " + history.error.message);
+        S.customTypes = history.data.map(row => row.name);
         const tds = ts.length
           ? await q(
               sb
@@ -2893,6 +3083,7 @@ body:has(#auth) {
             kind: "event",
             title: r[ME.title],
             date: dd(r[ME.date]) || dd(r[ME.start]),
+            allDay: r[ME.allDay] === true,
             time: tt(r[ME.start]),
             end: tt(r[ME.end]),
             loc: r[ME.loc] || "",
@@ -3034,8 +3225,61 @@ body:has(#auth) {
         r();
       }
       /* ===================================================================== */
-      const on = (d) => S.items.filter((i) => i.date === d);
-      const byT = (a, b) => mins(a.time) - mins(b.time),
+      // Nationwide recurring U.S. federal holidays, using OPM's standard
+      // Monday-Friday observed-date rules. Not a BYU closure calendar.
+      const holidayCache = new Map();
+      function federalHolidays(year) {
+        if (holidayCache.has(year)) return holidayCache.get(year);
+        const result = [];
+        const nth = (month, weekday, occurrence) => {
+          const first = new Date(year, month, 1, 12);
+          return new Date(year, month, 1 + (weekday - first.getDay() + 7) % 7 + (occurrence - 1) * 7, 12);
+        };
+        const lastMonday = month => {
+          const last = new Date(year, month + 1, 0, 12);
+          last.setDate(last.getDate() - (last.getDay() + 6) % 7);
+          return last;
+        };
+        const add = (key, title, date, observed = false) => result.push({
+          id: `us-holiday-${year}-${key}${observed ? "-observed" : ""}`,
+          kind: "event", title: title + (observed ? " (observed)" : ""),
+          date: iso(date), allDay: true, time: "", end: "", loc: "",
+          type: "Federal holiday", pri: 2, done: false, holiday: true,
+          desc: "U.S. federal holiday" + (observed ? " — observed date for a standard Monday–Friday workweek." : ".") + " School and employer schedules may differ. Automatically displayed; this entry cannot be edited or deleted."
+        });
+        const fixed = (key, title, month, day) => {
+          const actual = new Date(year, month, day, 12);
+          add(key, title, actual);
+          if (actual.getDay() === 6 || actual.getDay() === 0) {
+            const observed = new Date(actual);
+            observed.setDate(observed.getDate() + (actual.getDay() === 6 ? -1 : 1));
+            add(key, title, observed, true);
+          }
+        };
+        fixed("new-year", "New Year’s Day", 0, 1);
+        if (year >= 1986) add("mlk", "Martin Luther King Jr. Day", nth(0, 1, 3));
+        add("washington", "Washington’s Birthday (Presidents’ Day)", nth(1, 1, 3));
+        add("memorial", "Memorial Day", lastMonday(4));
+        if (year >= 2021) fixed("juneteenth", "Juneteenth National Independence Day", 5, 19);
+        fixed("independence", "Independence Day", 6, 4);
+        add("labor", "Labor Day", nth(8, 1, 1));
+        add("columbus", "Columbus Day", nth(9, 1, 2));
+        fixed("veterans", "Veterans Day", 10, 11);
+        add("thanksgiving", "Thanksgiving Day", nth(10, 4, 4));
+        fixed("christmas", "Christmas Day", 11, 25);
+        holidayCache.set(year, result);
+        return result;
+      }
+      function holidaysOn(date) {
+        const year = Number(date.slice(0, 4));
+        // Next year's New Year's Day can be observed on December 31 this year.
+        return [year - 1, year, year + 1].flatMap(federalHolidays).filter(item => item.date === date);
+      }
+      function calendarItem(id) {
+        return S.items.find(item => item.id === id) || [...holidayCache.values()].flat().find(item => item.id === id);
+      }
+      const on = (d) => [...holidaysOn(d), ...S.items.filter((i) => i.date === d)];
+      const byT = (a, b) => Number(!!b.allDay) - Number(!!a.allDay) || (a.allDay ? 0 : mins(a.time) - mins(b.time)),
         byP = (a, b) => a.pri - b.pri;
       const tasks = (d) =>
           on(d)
@@ -3147,11 +3391,11 @@ body:has(#auth) {
         return `<div class="main login"><div class="av">👤</div><h1>The Daily Blend</h1>
 ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the setup guide for missing tables or columns, then reload. If birth_date is missing, run tasks-events-update.sql.</div>` : ""}
 <div class="seg"><a href="#login" class="${c ? "" : "on"}" onclick="LM='in';r()">Log in</a><a href="#login" class="${c ? "on" : ""}" onclick="LM='up';r()">Create account</a></div>
-<form onsubmit="event.preventDefault();auth()">${c ? `<label for="su-name">Name</label><input id="su-name" type="text" required autocomplete="name" oninput="chk()">
-<label for="su-school">School</label><input id="su-school" type="text" required autocomplete="organization" oninput="chk()">
-<label for="su-major">Major</label><input id="su-major" type="text" required oninput="chk()">
-<label for="su-work">Work</label><input id="su-work" type="text" required oninput="chk()">
-<label>Date of birth</label>${birthPicker("su-birth", "", "chk()")}
+<form id="auth-form" ${c ? "novalidate" : ""} onsubmit="event.preventDefault();auth()">${c ? '<p class="signup-note">Only Name, Email address, and Password are required. You can add everything else later in your profile.</p>' : ""}${c ? `<label for="su-name">Name <span class="required-star" aria-hidden="true">*</span> <small class="required-label">Required</small></label><input id="su-name" type="text" maxlength="25" required autocomplete="name" oninput="chk()">
+<label for="su-school">School <small class="optional-label">– Optional</small></label><input id="su-school" type="text" maxlength="40" placeholder="Find campus events" autocomplete="organization" oninput="chk()">
+<label for="su-major">Major <small class="optional-label">– Optional</small></label><input id="su-major" type="text" maxlength="40" placeholder="Find major-related events" oninput="chk()">
+<label for="su-work">Work <small class="optional-label">– Optional</small></label><input id="su-work" type="text" maxlength="40" placeholder="Find career events" oninput="chk()">
+<label for="su-birth">Date of birth <small class="optional-label">– Optional</small></label><small id="su-birth-help" class="signup-field-help">So we can celebrate your birthday!</small>${birthPicker("su-birth", "", "chk()").replace('type="date"', 'type="date" aria-describedby="su-birth-help"')}
 <h2>School calendars — optional</h2>
 <p style="font-size:13px;color:var(--mut)">
   Save your calendar links for future importing.
@@ -3159,11 +3403,13 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
   You can leave these fields blank.
 </p>
 
-<label for="su-canvas">Canvas calendar feed link</label>
+<label for="su-canvas">Canvas calendar feed link <small class="optional-label">– Optional</small></label>
 <input
   id="su-canvas"
+  maxlength="8192"
+  oninput="chk()"
   type="url"
-  placeholder="Paste your Canvas calendar feed URL"
+  placeholder="Add Canvas calendar URL"
   autocomplete="off"
   aria-describedby="su-canvas-help"
 />
@@ -3181,11 +3427,13 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
   <p>Use the calendar feed link, rather than the address of the Calendar page.</p>
 </details>
 
-<label for="su-learning-suite">Learning Suite calendar feed link</label>
+<label for="su-learning-suite">Learning Suite calendar feed link <small class="optional-label">– Optional</small></label>
 <input
   id="su-learning-suite"
+  maxlength="8192"
+  oninput="chk()"
   type="url"
-  placeholder="Paste a Learning Suite iCalendar feed URL"
+  placeholder="Add course calendar URL"
   autocomplete="off"
   aria-describedby="su-learning-suite-help"
 />
@@ -3207,36 +3455,106 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
     Use the feed URL, rather than the course page address.
   </p>
 </details>
-<label for="su-gender">Gender</label><select id="su-gender" required onchange="chk()"><option value="">Select…</option><option>Female</option><option>Male</option></select>
-<label for="su-interests">Interests</label><input id="su-interests" type="text" required placeholder="Separate with commas" oninput="chk()">` : ""}<label for="u">Email address</label><input id="u" type="email" value="${esc(pendingEmail)}" required autocomplete="email" oninput="chk()">
-<label for="pw">Password</label><input id="pw" type="password" required minlength="${c ? 8 : 1}" autocomplete="${c ? "new-password" : "current-password"}" oninput="chk()">
+<label for="su-gender">Gender <small class="optional-label">– Optional</small></label><select id="su-gender" onchange="chk()"><option value="">Select gender</option><option>Female</option><option>Male</option><option>Non-binary</option><option>Other</option></select>
+<label for="su-interests">Interests <small class="optional-label">– Optional</small></label><input id="su-interests" type="text" maxlength="250" placeholder="Find events you’ll enjoy" oninput="chk()">` : ""}<label for="u">Email address${c ? ' <span class="required-star" aria-hidden="true">*</span> <small class="required-label">Required</small>' : ""}</label><input id="u" type="email" value="${esc(pendingEmail)}" required autocomplete="email" oninput="chk()">
+<label for="pw">Password${c ? ' <span class="required-star" aria-hidden="true">*</span> <small class="required-label">Required</small>' : ""}</label><input id="pw" type="password" required minlength="${c ? 8 : 1}" autocomplete="${c ? "new-password" : "current-password"}" oninput="chk()">
 <label style="display:flex;gap:8px;align-items:center"><input id="st" type="checkbox" ${remember ? "checked" : ""}> Stay logged in</label>
-<div id="er" class="err" role="status" aria-live="polite"></div><button class="btn" id="go" disabled>${c ? "Create account" : "Log in"}</button></form>
+<div id="er" class="err" role="status" aria-live="polite"></div><button class="btn ${c ? "is-incomplete" : ""}" id="go" ${c ? "" : "disabled"}>${c ? "Create account" : "Log in"}</button></form>
 <button class="btn alt" onclick="startDemo()">Try demo (no login)</button>${!useSB ? "<p>Live login requires your Supabase URL and public key. Demo changes are temporary.</p>" : ""}</div>`;
       }
+      // Names may include numbers and symbols, but must contain at least one letter.
+      function validSignupName(value) {
+        return value.length <= 25 && /\p{L}/u.test(value.trim());
+      }
+      function authFieldsValid() {
+        const signup = LM === "up";
+        const nameValid = !signup || validSignupName($("#su-name")?.value || "");
+        const birth = $("#su-birth")?.value || "";
+        const birthValid = !signup || !birth || ageFromBirthDate(birth) !== null;
+        const email = $("#u"), password = $("#pw");
+        const linksValid = !signup || ["#su-canvas", "#su-learning-suite"].every(id => !$(id) || $(id).validity.valid);
+        return nameValid && birthValid && linksValid && email.validity.valid && !!email.value.trim() && !!password.value && (!signup || password.value.length >= 8);
+      }
+      let authBusy = false;
+      function signupErrors() {
+        const errors = [];
+        const check = (id, message) => errors.push({ id, message });
+        if (!$("#su-name").value.trim()) check("su-name", "You must fill out Name before creating an account.");
+        else if ($("#su-name").value.length > 25) check("su-name", "Name must be 25 characters or fewer.");
+        else if (!validSignupName($("#su-name").value)) check("su-name", "Please enter a valid name/nickname containing at least one letter.");
+        for (const [id, label, limit] of [["su-school", "School", 40], ["su-major", "Major", 40], ["su-work", "Work", 40], ["su-interests", "Interests", 250]])
+          if ($("#" + id).value.length > limit) check(id, label + " must be " + limit + " characters or fewer.");
+        if (!$("#u").value.trim()) check("u", "You must fill out Email address before creating an account.");
+        else if (!$("#u").validity.valid) check("u", "Enter a valid email address before creating an account.");
+        if (!$("#pw").value) check("pw", "You must fill out Password before creating an account.");
+        else if ($("#pw").value.length < 8) check("pw", "Your password must contain at least 8 characters.");
+        const birth = $("#su-birth").value;
+        if (birth && ageFromBirthDate(birth) === null) check("su-birth", "Choose a valid date of birth that is not in the future.");
+        for (const [id, label] of [["su-canvas", "Canvas"], ["su-learning-suite", "Learning Suite"]])
+          if ($("#" + id).value.length > 8192) check(id, label + " calendar URL must be 8,192 characters or fewer.");
+          else if (!$("#" + id).validity.valid) check(id, "Enter a valid " + label + " calendar URL, or leave this optional field blank.");
+        return errors;
+      }
+      function clearSignupError(input) {
+        const errorId = input.id + "-error";
+        $("#" + errorId)?.remove();
+        input.classList.remove("signup-invalid");
+        input.removeAttribute("aria-invalid");
+        const ids = (input.getAttribute("aria-describedby") || "").split(/\s+/).filter(id => id && id !== errorId);
+        if (ids.length) input.setAttribute("aria-describedby", ids.join(" "));
+        else input.removeAttribute("aria-describedby");
+      }
+      function showSignupErrors(errors) {
+        errors.forEach(({id, message}) => {
+          const input = $("#" + id);
+          clearSignupError(input);
+          const note = document.createElement("p");
+          note.id = id + "-error"; note.className = "signup-field-error";
+          note.textContent = message;
+          input.insertAdjacentElement("afterend", note);
+          input.classList.add("signup-invalid");
+          input.setAttribute("aria-invalid", "true");
+          input.setAttribute("aria-describedby", [input.getAttribute("aria-describedby"), note.id].filter(Boolean).join(" "));
+        });
+        const input = $("#" + errors[0].id);
+        input.focus({ preventScroll: true });
+        input.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      }
       function chk() {
-        $("#go").disabled = !(
-          (LM !== "up" ||
-            (["name", "school", "major", "work"].every((k) =>
-              $("#su-" + k).value.trim(),
-            ) &&
-              $("#su-gender").value &&
-              normInterests($("#su-interests").value).length &&
-              ageFromBirthDate($("#su-birth").value) !== null)) &&
-          $("#u").validity.valid &&
-          $("#u").value.trim() &&
-          $("#pw").value
-        );
+        if (authBusy) return;
+        const button = $("#go");
+        if (LM !== "up") { button.disabled = !authFieldsValid(); return; }
+        button.disabled = false;
+        const errors = signupErrors();
+        button.classList.toggle("is-incomplete", errors.length > 0);
+        document.querySelectorAll("#auth-form .signup-invalid").forEach(input => {
+          if (!errors.some(error => error.id === input.id)) clearSignupError(input);
+        });
+        if (!errors.length) $("#er").textContent = "";
       }
       async function auth() {
+        if (authBusy) return;
         const email = $("#u").value.trim(),
           password = $("#pw").value,
           btn = $("#go"),
           er = $("#er");
+        if (LM === "up") {
+          const errors = signupErrors();
+          if (errors.length) {
+            er.textContent = errors[0].message;
+            showSignupErrors(errors);
+            return;
+          }
+        } else if (!authFieldsValid()) {
+          er.textContent = "Enter your email address and password.";
+          $("#auth-form")?.reportValidity();
+          return;
+        }
         if (!useSB) {
           er.textContent = "Configure Supabase first.";
           return;
         }
+        authBusy = true;
         btn.disabled = true;
         try {
           choosePersistence($("#st").checked);
@@ -3281,6 +3599,9 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
           er.textContent = nice(e);
           btn.disabled = false;
           S = init();
+        } finally {
+          authBusy = false;
+          if (btn.isConnected) { btn.disabled = false; chk(); }
         }
       }
       function summary() {
@@ -3306,7 +3627,7 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
               rem.push(`📚 ${esc(i.title)} is due within 24 hours`);
             if (
               i.kind == "event" &&
-              i.type == "social" &&
+              !i.allDay && i.type == "social" &&
               i.date == TODAY &&
               mins(i.time) > nm &&
               mins(i.time) - nm <= 240
@@ -3326,16 +3647,17 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
         );
       }
       const evRow = (e) =>
-        `<div class="row" onclick="openEv('${e.id}')"><span class="dot" style="background:${T[e.type][1]}"></span><span class="t"><b>${esc(e.title)}</b><small>${t12(e.time)}${e.end ? "–" + t12(e.end) : ""}${e.loc ? " · " + esc(e.loc) : ""}</small></span></div>`;
+        `<div class="row" onclick="openEv('${e.id}')"><span class="dot" style="background:${typeInfo(e.type)[1]}"></span><span class="t"><b>${esc(e.title)}</b><small>${e.allDay ? "" : t12(e.time) + (e.end ? "–" + t12(e.end) : "")}${e.loc ? (e.allDay ? "" : " · ") + esc(e.loc) : ""}</small></span></div>`;
       function day() {
-        const ev = evs(D);
+        const allEvents = evs(D), ev = allEvents.filter(e => !e.allDay);
+        const allDayEvents = allEvents.filter(e => e.allDay);
         let g = "";
         for (let h = 6; h <= 22; h++)
           g += `<i style="top:${(h - 6) * 48}px">${t12(h + ":00")}</i>`;
         const blk = (e) => {
           const s = mins(e.time),
             en = e.end ? mins(e.end) : s + 60;
-          return `<div class="ev" style="top:${((s - 360) / 60) * 48 + 1}px;height:${Math.max(24, ((en - s) / 60) * 48 - 3)}px;background:${T[e.type][1]}" onclick="openEv('${e.id}')">${esc(e.title)}<br><small>${t12(e.time)}</small></div>`;
+          return `<div class="ev" style="top:${((s - 360) / 60) * 48 + 1}px;height:${Math.max(24, ((en - s) / 60) * 48 - 3)}px;background:${typeInfo(e.type)[1]}" onclick="openEv('${e.id}')">${esc(e.title)}<br><small>${t12(e.time)}</small></div>`;
         };
         const free = (h) =>
           !ev.some((e) => {
@@ -3355,7 +3677,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
           L(D, { weekday: "short", month: "short", day: "numeric" }),
           seg("day") +
             nv("day", "Day view") +
-            `<div class="dg"><div class="grid">${g}${sg}${ev.map(blk).join("")}</div><div><h2 style="margin-top:0">To-Do</h2>${
+            `${allDayEvents.length ? `<section class="all-day-events" aria-label="All-day events"><h2>All day</h2>${allDayEvents.map(evRow).join("")}</section>` : ""}<div class="dg"><div class="grid">${g}${sg}${ev.map(blk).join("")}</div><div><h2 style="margin-top:0">To-Do</h2>${
               tasks(D)
                 .map(
                   (t) =>
@@ -3403,12 +3725,12 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
                   )
                     .map(
                       (t) =>
-                        `<span style="background:${T[t.type][1]};${t.done ? "opacity:.4;text-decoration:line-through" : ""}" onclick="openEv('${t.id}')">${PS[t.pri]} ${esc(t.title)}</span>`,
+                        `<span style="background:${typeInfo(t.type)[1]};${t.done ? "opacity:.4;text-decoration:line-through" : ""}" onclick="openEv('${t.id}')">${PS[t.pri]} ${esc(t.title)}</span>`,
                     )
                     .join("")}<hr>${evs(d)
                     .map(
                       (e) =>
-                        `<span style="background:${T[e.type][1]}" onclick="openEv('${e.id}')">${t12(e.time)}<br>${esc(e.title)}</span>`,
+                        `<span style="background:${typeInfo(e.type)[1]}" onclick="openEv('${e.id}')">${e.allDay ? "" : t12(e.time) + "<br>"}${esc(e.title)}</span>`,
                     )
                     .join("")}</div>`,
               )
@@ -3441,7 +3763,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
                   .slice(0, 3)
                   .map(
                     (i) =>
-                      `<u style="background:${T[i.type][1]}">${esc(i.title)}</u>`,
+                      `<u style="background:${typeInfo(i.type)[1]}">${esc(i.title)}</u>`,
                   )
                   .join(
                     "",
@@ -3540,7 +3862,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
             ${i.time ? " · " + t12(i.time) : ""}
           </small>
           <span class="event-category">
-            ${esc(T[i.type] ? T[i.type][0] : "Event")}
+            ${esc(typeInfo(i.type)[0])}
           </span>
         </div>
       `).join("") || "<small>No upcoming events.</small>"}
@@ -3556,11 +3878,10 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
         return shell(
           "To-Do",
           `<div class="nav2"><button onclick="D=ad(D,-1);r()" aria-label="Previous day">‹</button><span>${L(D, { weekday: "short", month: "short", day: "numeric" })}</span><button onclick="D=ad(D,1);r()" aria-label="Next day">›</button></div>` +
-            Object.keys(T)
-              .filter((k) => ts.some((t) => t.type == k))
+            [...new Set(ts.map(t => ty(t.type)))]
               .map(
                 (k) =>
-                  `<h2>${T[k][0]}</h2>${ts
+                  `<h2>${esc(typeInfo(k)[0])}</h2>${ts
                     .filter((t) => t.type == k)
                     .map(trow)
                     .join("")}`,
@@ -3583,6 +3904,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
                 date: D,
                 time: "12:00",
                 end: "13:00",
+                allDay: false,
                 loc: "",
                 type: "school",
                 pri: 2,
@@ -3593,16 +3915,11 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
         return shell(
           (it ? "Edit " : "Add ") + (ev ? "Event" : "Task"),
           `${it ? "" : `<div class="seg"><a class="${ev ? "" : "on"}" onclick="rd();AK='task';r()">Task</a><a class="${ev ? "on" : ""}" onclick="rd();AK='event';r()">Event</a></div>`}
-<label>Title</label><input id="f-title" value="${esc(DR.title)}"><label>Date</label><input id="f-date" type="date" value="${DR.date}">
-${ev ? `<div style="display:flex;gap:8px"><div style="flex:1"><label>Start</label><input id="f-time" type="time" value="${DR.time || "12:00"}"></div><div style="flex:1"><label>End</label><input id="f-end" type="time" value="${DR.end || "13:00"}"></div></div><label>Location</label><input id="f-loc" value="${esc(DR.loc)}">` : ""}
-<label>Type</label><select id="f-type">${Object.keys(T)
-            .map(
-              (k) =>
-                `<option value="${k}" ${DR.type == k ? "selected" : ""}>${T[k][0]}</option>`,
-            )
-            .join("")}</select>
+<label>Title</label><input id="f-title" maxlength="75" value="${esc(DR.title)}"><label>Date</label><input id="f-date" type="date" value="${DR.date}">
+${ev ? `<label class="all-day-toggle" for="f-all-day"><input id="f-all-day" type="checkbox" ${DR.allDay ? "checked" : ""} onchange="rd();r()"> All day</label><div ${DR.allDay ? "hidden" : ""}><div style="display:flex;gap:8px"><div style="flex:1"><label>Start</label><input id="f-time" type="time" value="${DR.time || "12:00"}"></div><div style="flex:1"><label>End</label><input id="f-end" type="time" value="${DR.end || "13:00"}"></div></div></div><label>Location</label><input id="f-loc" maxlength="100" value="${esc(DR.loc)}">` : ""}
+${typeField(DR.type)}
 <label>Priority</label><select id="f-pri">${[1, 2, 3].map((p) => `<option value="${p}" ${DR.pri == p ? "selected" : ""}>${p} · ${PN[p]} ${PS[p]}</option>`).join("")}</select>
-<label>Description</label><textarea id="f-desc" rows="2">${esc(DR.desc)}</textarea><div class="err" id="er"></div><button id="save-item" class="btn" onclick="saveItem()">${it ? "Save changes" : "Add"}</button>`,
+<label>Description</label><textarea id="f-desc" maxlength="500" rows="2">${esc(DR.desc)}</textarea><div class="err" id="er"></div><button id="save-item" class="btn" onclick="saveItem()">${it ? "Save changes" : "Add"}</button>`,
           {
             left: '<button class="ic" onclick="DR=null;E=null;history.length>1?history.back():go(\'summary\')" aria-label="Close">✕</button>',
             right: "<span></span>",
@@ -3615,10 +3932,11 @@ ${ev ? `<div style="display:flex;gap:8px"><div style="flex:1"><label>Start</labe
           ...DR,
           title: g("title") ?? DR.title,
           date: g("date") || DR.date,
+          allDay: $("#f-all-day")?.checked ?? DR.allDay ?? false,
           time: g("time") ?? DR.time,
           end: g("end") ?? DR.end,
           loc: g("loc") ?? DR.loc,
-          type: g("type") || DR.type,
+          type: g("type") ?? DR.type,
           pri: +g("pri") || DR.pri,
           desc: g("desc") ?? DR.desc,
         };
@@ -3629,17 +3947,32 @@ ${ev ? `<div style="display:flex;gap:8px"><div style="flex:1"><label>Start</labe
         rd();
         if (!DR.title.trim())
           return ($("#er").textContent = "Please enter a title.");
+        for (const [field, label, limit] of [["title", "Title", 75], ["loc", "Location", 100], ["type", "Type", 20], ["desc", "Description", 500]]) {
+          if (field === "loc" && AK !== "event") continue;
+          if ((DR[field] || "").length > limit) {
+            $("#er").textContent = label + " must be " + limit + " characters or fewer.";
+            const input = $("#f-" + field);
+            input?.focus();
+            input?.scrollIntoView({ block: "center" });
+            return;
+          }
+        }
         if (!DR.date) return ($("#er").textContent = "Please choose a date.");
+        if (!cleanType(DR.type) || cleanType(DR.type).length > 20)
+          return ($("#er").textContent = "Enter a type between 1 and 20 characters.");
         const ev = AK == "event";
-        if (ev && (!DR.time || !DR.end))
+        if (ev && !DR.allDay && (!DR.time || !DR.end))
           return ($("#er").textContent = "Please enter both a start time and an end time.");
-        if (ev && DR.end && mins(DR.end) <= mins(DR.time))
+        if (ev && !DR.allDay && DR.end && mins(DR.end) <= mins(DR.time))
           return ($("#er").textContent = "End time must be after start time.");
         const o = {
           ...DR,
           title: DR.title.trim(),
+          type: ty(DR.type),
           kind: ev ? "event" : "task",
+          allDay: ev && !!DR.allDay,
         };
+        if (o.allDay) { o.time = ""; o.end = ""; }
         if (!ev) {
           o.time = "";
           o.end = "";
@@ -3674,16 +4007,17 @@ ${ev ? `<div style="display:flex;gap:8px"><div style="flex:1"><label>Start</labe
         }
       }
       function openEv(id) {
-        const i = S.items.find((x) => x.id == id),
-          k = (a, b) =>
+        const i = calendarItem(id);
+        if (!i) return;
+        const k = (a, b) =>
             b ? `<div class="kv"><span>${a}</span><b>${b}</b></div>` : "";
         const o = document.createElement("div");
         o.className = "ov";
         o.onclick = (e) => {
           if (e.target == o) o.remove();
         };
-        o.innerHTML = `<div class="sheet"><header><h3>${i.kind == "task" ? "Task" : "Event"} details</h3><button class="ic" onclick="this.closest('.ov').remove()" aria-label="Close">✕</button></header>${k("Title", esc(i.title))}${k("Date", L(i.date, { month: "short", day: "numeric", year: "numeric" }))}${i.kind == "event" ? k("Time", t12(i.time) + (i.end ? " – " + t12(i.end) : "")) + k("Location", esc(i.loc)) : ""}${k("Type", T[i.type][0])}${k("Priority", `<span class="p${i.pri}">${i.pri} · ${PN[i.pri]}</span>`)}${k("Description", esc(i.desc))}
-<div style="display:flex;gap:8px"><button class="btn alt" onclick="E='${i.id}';DR=null;go('add')">✎ Edit</button><button class="btn del" onclick="delItem('${i.id}')">Delete</button></div></div>`;
+        o.innerHTML = `<div class="sheet"><header><h3>${i.kind == "task" ? "Task" : "Event"} details</h3><button class="ic" onclick="this.closest('.ov').remove()" aria-label="Close">✕</button></header>${k("Title", esc(i.title))}${k("Date", L(i.date, { month: "short", day: "numeric", year: "numeric" }))}${i.kind == "event" ? k("Time", i.allDay ? "All day" : t12(i.time) + (i.end ? " – " + t12(i.end) : "")) + k("Location", esc(i.loc)) : ""}${k("Type", esc(typeInfo(i.type)[0]))}${i.holiday ? "" : k("Priority", `<span class="p${i.pri}">${i.pri} · ${PN[i.pri]}</span>`)}${k("Description", esc(i.desc))}
+${i.holiday ? '<p class="photo-hint">Automatically added U.S. federal holiday</p>' : `<div style="display:flex;gap:8px"><button class="btn alt" onclick="E='${i.id}';DR=null;go('add')">✎ Edit</button><button class="btn del" onclick="delItem('${i.id}')">Delete</button></div>`}</div>`;
         $("#app").appendChild(o);
       }
       async function delItem(id) {
@@ -4076,7 +4410,7 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
         const p = S.prof;
         const fields = PROFILE_FIELDS.map(([field, label]) => {
           if (field === "interests") return PE
-            ? `<label for="p-interests">Interests (comma-separated)</label><input id="p-interests" type="text" value="${esc((S.interests || []).join(", "))}">`
+            ? `<label for="p-interests">Interests (comma-separated)</label><input id="p-interests" type="text" maxlength="250" value="${esc((S.interests || []).join(", "))}">`
             : interestsSection();
           if (field === "age") {
             if (PE) return "";
@@ -4087,7 +4421,7 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
             field === "interests" ? S.interests.join(", ") : p[field];
           return PE
             ? `<label for="p-${field}">${label}${field === "interests" ? " (comma-separated)" : ""}</label>
-            ${field === "birthDate" ? birthPicker("p-birthDate", value, "updateAgePreview()") : field === "gender" ? `<select id="p-gender"><option value="">Select…</option>${["Female", "Male"].map((g) => `<option ${value === g ? "selected" : ""}>${g}</option>`).join("")}</select>` : `<input id="p-${field}" type="text" value="${esc(value)}">`}${field === "birthDate" ? `<small id="profile-age-preview" class="profile-age-hint">${esc(ageDescription(value))}</small><small class="profile-age-hint">Optional. Used to calculate your age and celebrate your birthday.</small>` : ""}`
+            ${field === "birthDate" ? birthPicker("p-birthDate", value, "updateAgePreview()") : field === "gender" ? `<select id="p-gender"><option value="">Select…</option>${["Female", "Male", "Non-binary", "Other"].map((g) => `<option ${value === g ? "selected" : ""}>${g}</option>`).join("")}</select>` : `<input id="p-${field}" type="text" ${field === "name" ? 'maxlength="25"' : ["school", "work", "major"].includes(field) ? 'maxlength="40"' : ""} value="${esc(value)}">`}${field === "birthDate" ? `<small id="profile-age-preview" class="profile-age-hint">${esc(ageDescription(value))}</small><small class="profile-age-hint">Optional. Used to calculate your age and celebrate your birthday.</small>` : ""}`
             : `<div class="kv"><span>${label}</span><div class="profile-field-value"><b>${field === "birthDate" ? birthDateDisplay(value) : esc(value) || "—"}</b>${fieldPencil(field, label)}</div></div>`;
         }).join("");
         const body = `${profilePictureButton()}<p class="photo-hint">Click your picture to change it</p>
@@ -4210,11 +4544,25 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
         }
       }
       async function saveP() {
+        for (const [field, label, limit] of [["name", "Name", 25], ["school", "School", 40], ["work", "Work", 40], ["major", "Major", 40], ["interests", "Interests", 250]]) {
+          const input = $("#p-" + field);
+          if (input && input.value.length > limit) {
+            $("#profile-error").textContent = label + " must be " + limit + " characters or fewer.";
+            input.focus();
+            input.scrollIntoView({ block: "center" });
+            return;
+          }
+        }
         const np = {};
         ["name", "school", "work", "major", "birthDate", "gender"].forEach(
           (k) => (np[k] = $("#p-" + k).value.trim()),
         );
-        np.name = np.name || S.prof.name;
+        if (!validSignupName($("#p-name").value)) {
+          $("#profile-error").textContent = "Please enter a valid name/nickname containing at least one letter.";
+          $("#p-name").focus();
+          $("#p-name").scrollIntoView({ block: "center" });
+          return;
+        }
         if (np.birthDate && ageFromBirthDate(np.birthDate) === null) {
           $("#profile-error").textContent =
             "Choose a valid date of birth that is not in the future.";
@@ -4687,8 +5035,23 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
         document.documentElement.dataset.theme = S.set.theme;
         $("#app").dataset.page = h;
         $("#app").innerHTML = f();
+        const hasMobileNavigation = !!$("#app > .nav");
+        $("#app").classList.toggle("mobile-dashboard", hasMobileNavigation);
+        document.body.classList.toggle("mobile-dashboard", hasMobileNavigation);
+        updateMobileViewport();
         updateBirthdayUI();
       }
+      // Safari's visible area changes when its toolbars expand or collapse.
+      // Keep the dashboard within that area; only its content panel scrolls.
+      function updateMobileViewport() {
+        const viewport = window.visualViewport;
+        const root = document.documentElement;
+        root.style.setProperty("--mobile-viewport-height", (viewport?.height || window.innerHeight) + "px");
+        root.style.setProperty("--mobile-viewport-top", (viewport?.offsetTop || 0) + "px");
+      }
+      window.visualViewport?.addEventListener("resize", updateMobileViewport);
+      window.visualViewport?.addEventListener("scroll", updateMobileViewport);
+      window.addEventListener("resize", updateMobileViewport);
       addEventListener("hashchange", r);
       // Refresh the birthday/age at local midnight without discarding unsaved form text.
       setInterval(updateBirthdayUI, 60000);
