@@ -3650,19 +3650,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
       const evRow = (e) =>
         `<div class="row" onclick="openEv('${e.id}')"><span class="dot" style="background:${typeInfo(e.type)[1]}"></span><span class="t"><b>${esc(e.title)}</b><small>${e.allDay ? "" : t12(e.time) + (e.end ? "–" + t12(e.end) : "")}${e.loc ? (e.allDay ? "" : " · ") + esc(e.loc) : ""}</small></span></div>`;
       function day() {
-<<<<<<< HEAD
-        const allEvents = evs(D), ev = allEvents.filter(e => !e.allDay);
-        const allDayEvents = allEvents.filter(e => e.allDay);
-=======
         const ev = evs(D);
-        const allDayEvents = ev.filter((e) => e.allDay);
-        const timedEvents = ev.filter((e) => !e.allDay);
-        const startHour = Math.min(
-          6,
-          ...timedEvents.map((e) => Math.floor(mins(e.time) / 60)),
-        );
-
->>>>>>> 712489975c99cd22329f82bb4a037dc1d9732fbd
         let g = "";
 
         for (let h = startHour; h <= 24; h++) {
@@ -3671,29 +3659,9 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
         }
 
         const blk = (e) => {
-<<<<<<< HEAD
           const s = mins(e.time),
             en = e.end ? mins(e.end) : s + 60;
-          return `<div class="ev" style="top:${((s - 360) / 60) * 48 + 1}px;height:${Math.max(24, ((en - s) / 60) * 48 - 3)}px;background:${typeInfo(e.type)[1]}" onclick="openEv('${e.id}')">${esc(e.title)}<br><small>${t12(e.time)}</small></div>`;
-=======
-          const s = mins(e.time);
-          const en = e.end ? mins(e.end) : s + 60;
-
-          return `
-            <div
-              class="ev"
-              style="
-                top:${((s - startHour * 60) / 60) * 48 + 1}px;
-                height:${Math.max(24, ((en - s) / 60) * 48 - 3)}px;
-                background:${T[e.type][1]}
-              "
-              onclick="openEv('${e.id}')"
-            >
-              ${esc(e.title)}<br>
-              <small>${t12(e.time)}</small>
-            </div>
-          `;
->>>>>>> 712489975c99cd22329f82bb4a037dc1d9732fbd
+          return `<div class="ev" style="top:${((s - 360) / 60) * 48 + 1}px;height:${Math.max(24, ((en - s) / 60) * 48 - 3)}px;background:${T[e.type][1]}" onclick="openEv('${e.id}')">${esc(e.title)}<br><small>${t12(e.time)}</small></div>`;
         };
 
         const free = (h) =>
@@ -3763,8 +3731,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
           L(D, { weekday: "short", month: "short", day: "numeric" }),
           seg("day") +
             nv("day", "Day view") +
-<<<<<<< HEAD
-            `${allDayEvents.length ? `<section class="all-day-events" aria-label="All-day events"><h2>All day</h2>${allDayEvents.map(evRow).join("")}</section>` : ""}<div class="dg"><div class="grid">${g}${sg}${ev.map(blk).join("")}</div><div><h2 style="margin-top:0">To-Do</h2>${
+            `<div class="dg"><div class="grid">${g}${sg}${ev.map(blk).join("")}</div><div><h2 style="margin-top:0">To-Do</h2>${
               tasks(D)
                 .map(
                   (t) =>
@@ -3772,46 +3739,6 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
                 )
                 .join("") || "<small>Nothing due.</small>"
             }</div></div>`,
-=======
-            `
-            <div class="dg">
-              <div>
-                ${allDaySection}
-                <div class="grid" style="height:${(24 - startHour) * 48}px">
-                  ${g}
-                  ${sg}
-                  ${timedEvents.map(blk).join("")}
-                </div>
-              </div>
-
-              <div>
-                <h2 style="margin-top:0">To-Do</h2>
-                ${
-                  tasks(D)
-                    .map(
-                      (t) => `
-                        <div class="row ${t.done ? "done" : ""}"
-                          style="padding:6px">
-                          <input
-                            type="checkbox"
-                            ${t.done ? "checked" : ""}
-                            onclick="tog('${t.id}')"
-                            aria-label="Mark ${esc(t.title)} complete"
-                          >
-                          <span class="t"
-                            style="font-size:12px"
-                            onclick="openEv('${t.id}')">
-                            ${esc(t.title)}
-                          </span>
-                        </div>
-                      `,
-                    )
-                    .join("") || "<small>Nothing due.</small>"
-                }
-              </div>
-            </div>
-            `,
->>>>>>> 712489975c99cd22329f82bb4a037dc1d9732fbd
           { nav: "c", fab: 1 },
         );
       }
