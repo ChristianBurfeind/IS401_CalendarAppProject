@@ -3356,11 +3356,25 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
         let g = "";
         for (let h = 6; h <= 22; h++)
           g += `<i style="top:${(h - 6) * 48}px">${t12(h + ":00")}</i>`;
-        const blk = (e) => {
-          const s = mins(e.time),
-            en = e.end ? mins(e.end) : s + 60;
-          return `<div class="ev" style="top:${((s - 360) / 60) * 48 + 1}px;height:${Math.max(24, ((en - s) / 60) * 48 - 3)}px;background:${T[e.type][1]}" onclick="openEv('${e.id}')">${esc(e.title)}<br><small>${t12(e.time)}</small></div>`;
-        };
+        
+const blk = (e) => {
+  const s = mins(e.time),
+    en = e.end ? mins(e.end) : s + 60;
+
+  const color = /^#[0-9a-fA-F]{6}$/.test(e.color || "")
+    ? e.color
+    : T[e.type][1];
+
+  return `<div class="ev"
+    style="top:${((s - 360) / 60) * 48 + 1}px;
+    height:${Math.max(24, ((en - s) / 60) * 48 - 3)}px;
+    background:${color}"
+    onclick="openEv('${e.id}')">
+    ${esc(e.title)}<br>
+    <small>${t12(e.time)}</small>
+  </div>`;
+};
+
         const free = (h) =>
           !ev.some((e) => {
             const s = mins(e.time),
