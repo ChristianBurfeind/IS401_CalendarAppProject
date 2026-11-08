@@ -1017,6 +1017,37 @@
         padding: 0 16px;
         font-size: 13px;
       }
+      .repeat-days {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 6px 0 12px;
+      }
+      .repeat-day-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        padding: 7px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--bg);
+        color: var(--ink);
+        font-size: 12px;
+        text-transform: none;
+        letter-spacing: 0;
+        cursor: pointer;
+      }
+      .repeat-day-option input {
+        width: auto;
+        margin: 0;
+      }
+      .repeat-help {
+        display: block;
+        margin: 4px 0 10px;
+        color: var(--mut);
+        font-size: 12px;
+      }
       .profile-age {
         display: block;
         color: var(--mut);
@@ -2489,6 +2520,11 @@ body:has(#auth) {
         events: {
           t: "Events",
           id: "Event_ID",
+          series: "Series_ID",
+          freq: "Repeat_Frequency",
+          days: "Repeat_Days",
+          until: "Repeat_Until",
+          exceptions: "Repeat_Exceptions",
           uid: "User_ID",
           title: "Event_Title",
           date: "Date",
@@ -2783,7 +2819,12 @@ body:has(#auth) {
                     type: it.type,
                     pri: +it.pri,
                     desc: it.desc || "",
-                    rep: false,
+                    rep: !!it.repeatFrequency || !!it.seriesId,
+                    series: it.seriesId || null,
+                    freq: it.repeatFrequency || null,
+                    days: it.repeatDays || [],
+                    until: it.repeatUntil || null,
+                    exceptions: it.repeatExceptions || [],
                   });
             };
             const modes = task
@@ -2853,6 +2894,19 @@ body:has(#auth) {
             await q(sb.from(M.todo.t).delete().eq(M.todo.id, it.rid));
           const removed = await q(sb.from(B.t).delete().eq(B.id, it.rid).select(B.id));
           if (!removed.length) throw new Error("Item was not deleted. Reload and try again.");
+          return true;
+        } catch (e) {
+          fail(e);
+          return false;
+        }
+      }
+      async function dbDelSeries(it) {
+        if (!live()) return true;
+        try {
+          if (!it.seriesId) throw new Error("This event is not part of a repeating series.");
+          const B = M.events;
+          const removed = await q(sb.from(B.t).delete().eq(B.series, it.seriesId).eq(B.uid, S.uid).select(B.id));
+          if (!removed.length) throw new Error("The repeating series was not deleted. Reload and try again.");
           return true;
         } catch (e) {
           fail(e);
@@ -3086,6 +3140,11 @@ body:has(#auth) {
           ...es.map((r) => ({
             id: "e" + r[ME.id],
             rid: r[ME.id],
+            seriesId: r[ME.series] || null,
+            repeatFrequency: r[ME.freq] || null,
+            repeatDays: r[ME.days] || [],
+            repeatUntil: r[ME.until] ? dd(r[ME.until]) : "",
+            repeatExceptions: r[ME.exceptions] || [],
             kind: "event",
             allDay: r.is_all_day === true,
             title: r[ME.title],
@@ -3283,9 +3342,31 @@ body:has(#auth) {
         return [year - 1, year, year + 1].flatMap(federalHolidays).filter(item => item.date === date);
       }
       function calendarItem(id) {
-        return S.items.find(item => item.id === id) || [...holidayCache.values()].flat().find(item => item.id === id);
+        const stored = S.items.find(item => item.id === id);
+        if (stored) return stored;
+        const match = String(id).match(/^(.*)~(\d{4}-\d{2}-\d{2})$/);
+        if (match) {
+          const master = S.items.find(item => item.id === match[1] && item.repeatFrequency);
+          const date = match[2];
+          if (master && repeatsOn(master, date)) return { ...master, id, sourceId: master.id, occurrenceDate: date, date };
+        }
+        return [...holidayCache.values()].flat().find(item => item.id === id);
       }
-      const on = (d) => [...holidaysOn(d), ...S.items.filter((i) => i.date === d)];
+      function repeatsOn(item, date) {
+        if (!item.repeatFrequency || date < item.date || (item.repeatUntil && date > item.repeatUntil) || (item.repeatExceptions || []).includes(date)) return false;
+        const day = pd(date).getDay();
+        if (item.repeatFrequency === "daily") return true;
+        if (item.repeatFrequency === "weekly") return (item.repeatDays || []).map(Number).includes(day);
+        if (item.repeatFrequency === "monthly") return pd(date).getDate() === pd(item.date).getDate();
+        return false;
+      }
+      const on = (d) => [
+        ...holidaysOn(d),
+        ...S.items.flatMap((i) => {
+          if (i.repeatFrequency) return repeatsOn(i, d) ? [{ ...i, id: i.id + "~" + d, sourceId: i.id, occurrenceDate: d, date: d }] : [];
+          return i.date === d ? [i] : [];
+        }),
+      ];
       const byT = (a, b) => Number(!!b.allDay) - Number(!!a.allDay) || (a.allDay ? 0 : mins(a.time) - mins(b.time)),
         byP = (a, b) => a.pri - b.pri;
       const tasks = (d) =>
@@ -3296,6 +3377,12 @@ body:has(#auth) {
           on(d)
             .filter((i) => i.kind === "event")
             .sort(byT);
+      function upcomingEvents(limit = 4) {
+        const result = [];
+        for (let offset = 0; offset <= 3660 && result.length < limit; offset++)
+          result.push(...evs(ad(TODAY, offset)).filter((item) => !item.holiday));
+        return result.slice(0, limit);
+      }
       const go = (h) => {
         location.hash = h;
         if (location.hash !== "#" + h) r();
@@ -3629,7 +3716,7 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
           nm = now.getHours() * 60 + now.getMinutes();
         const rem = [];
         if (S.set.notif) {
-          S.items.forEach((i) => {
+          [...on(TODAY), ...S.items.filter((i) => i.kind === "task" && i.date === ad(TODAY, 1))].forEach((i) => {
             if (i.done) return;
             if (
               i.kind == "task" &&
@@ -3955,17 +4042,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
   <div class="campus-panel">
     <h3>Upcoming Events</h3>
 
-    ${S.items
-      .filter(i =>
-        i.kind === "event" &&
-        i.date >= TODAY
-      )
-      .sort((a, b) =>
-        (a.date + (a.time || "")).localeCompare(
-          b.date + (b.time || "")
-        )
-      )
-      .slice(0, 4)
+    ${upcomingEvents(4)
       .map(i => `
         <div class="mini">
           <b>${esc(i.title)}</b>
@@ -4011,7 +4088,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
       }
       const val = (k, d) => (DR ? DR[k] : d);
       function addf() {
-        const it = E ? S.items.find((i) => i.id == E) : null;
+        const it = E ? calendarItem(E) : null;
         if (!DR)
           DR = it
             ? { ...it }
@@ -4025,19 +4102,23 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
                 type: "school",
                 pri: 2,
                 desc: "",
+                repeatFrequency: null,
+                repeatDays: [pd(D).getDay()],
+                repeatUntil: "",
               };
         if (it) AK = it.kind;
         const ev = AK == "event";
+        const repeatControls = !it || (it.repeatFrequency && SERIES_EDIT_SCOPE === "all");
         return shell(
           (it ? "Edit " : "Add ") + (ev ? "Event" : "Task"),
           `${it ? "" : `<div class="seg"><a class="${ev ? "" : "on"}" onclick="rd();AK='task';r()">Task</a><a class="${ev ? "on" : ""}" onclick="rd();AK='event';r()">Event</a></div>`}
-<label>Title</label><input id="f-title" maxlength="75" value="${esc(DR.title)}"><label>Date</label><input id="f-date" type="date" value="${DR.date}">
-${ev ? `<label class="all-day-toggle" for="f-all-day"><input id="f-all-day" type="checkbox" ${DR.allDay ? "checked" : ""} onchange="rd();r()"> All day</label><div ${DR.allDay ? "hidden" : ""}><div style="display:flex;gap:8px"><div style="flex:1"><label>Start</label><input id="f-time" type="time" value="${DR.time || "12:00"}"></div><div style="flex:1"><label>End</label><input id="f-end" type="time" value="${DR.end || "13:00"}"></div></div></div><label>Location</label><input id="f-loc" maxlength="100" value="${esc(DR.loc)}">` : ""}
+<label>Title</label><input id="f-title" maxlength="75" value="${esc(DR.title)}"><label>Date</label><input id="f-date" type="date" value="${DR.date}" onchange="rd();r()">
+${ev ? `<label class="all-day-toggle" for="f-all-day"><input id="f-all-day" type="checkbox" ${DR.allDay ? "checked" : ""} onchange="rd();r()"> All day</label><div ${DR.allDay ? "hidden" : ""}><div style="display:flex;gap:8px"><div style="flex:1"><label>Start</label><input id="f-time" type="time" value="${DR.time || "12:00"}"></div><div style="flex:1"><label>End</label><input id="f-end" type="time" value="${DR.end || "13:00"}"></div></div></div><label>Location</label><input id="f-loc" maxlength="100" value="${esc(DR.loc)}">${repeatControls ? `<label for="f-repeat">Repeat</label><select id="f-repeat" onchange="rd();r()"><option value="none" ${!DR.repeatFrequency ? "selected" : ""}>Does not repeat</option><option value="daily" ${DR.repeatFrequency === "daily" ? "selected" : ""}>Daily</option><option value="weekly" ${DR.repeatFrequency === "weekly" ? "selected" : ""}>Weekly</option><option value="monthly" ${DR.repeatFrequency === "monthly" ? "selected" : ""}>Monthly</option></select><div ${DR.repeatFrequency === "weekly" ? "" : "hidden"}><label>Repeat on</label><div class="repeat-days">${[[0,"Sun"],[1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"],[6,"Sat"]].map(([n,d]) => `<label class="repeat-day-option"><input class="repeat-day" type="checkbox" value="${n}" ${(DR.repeatDays || []).map(Number).includes(n) ? "checked" : ""} onchange="rd()">${d}</label>`).join("")}</div></div>${DR.repeatFrequency === "monthly" ? `<small class="repeat-help">Repeats on this date each month; months without that date are skipped.</small>` : ""}<div ${DR.repeatFrequency ? "" : "hidden"}><label for="f-repeat-until">End date (optional)</label><input id="f-repeat-until" type="date" min="${DR.date}" value="${DR.repeatUntil || ""}" onchange="rd()"><small class="repeat-help">Leave blank to repeat indefinitely.</small></div>` : ""}` : ""}
 ${typeField(DR.type)}
 <label>Priority</label><select id="f-pri">${[1, 2, 3].map((p) => `<option value="${p}" ${DR.pri == p ? "selected" : ""}>${p} · ${PN[p]} ${PS[p]}</option>`).join("")}</select>
 <label>Description</label><textarea id="f-desc" maxlength="500" rows="2">${esc(DR.desc)}</textarea><div class="err" id="er"></div><button id="save-item" class="btn" onclick="saveItem()">${it ? "Save changes" : "Add"}</button>`,
           {
-            left: '<button class="ic" onclick="DR=null;E=null;history.length>1?history.back():go(\'summary\')" aria-label="Close">✕</button>',
+            left: '<button class="ic" onclick="DR=null;E=null;SERIES_EDIT_SCOPE=null;history.length>1?history.back():go(\'summary\')" aria-label="Close">✕</button>',
             right: "<span></span>",
           },
         );
@@ -4055,6 +4136,9 @@ ${typeField(DR.type)}
           type: g("type") ?? DR.type,
           pri: +g("pri") || DR.pri,
           desc: g("desc") ?? DR.desc,
+          repeatFrequency: g("repeat") === "none" ? null : g("repeat") ?? DR.repeatFrequency ?? null,
+          repeatDays: [...document.querySelectorAll(".repeat-day:checked")].map((el) => +el.value),
+          repeatUntil: g("repeat-until") ?? DR.repeatUntil ?? "",
         };
       }
       let savingItem = false;
@@ -4081,6 +4165,22 @@ ${typeField(DR.type)}
           return ($("#er").textContent = "Please enter both a start time and an end time.");
         if (ev && !DR.allDay && DR.end && mins(DR.end) <= mins(DR.time))
           return ($("#er").textContent = "End time must be after start time.");
+        const previous = E ? calendarItem(E) : null;
+        if (E && !previous) return ($("#er").textContent = "Item no longer exists. Reload and try again.");
+        const source = previous?.sourceId ? S.items.find((x) => x.id === previous.sourceId) : previous;
+        const ruleOccurrence = !!previous?.sourceId;
+        const creatingRule = ev && !previous && !!DR.repeatFrequency;
+        if (ev && DR.repeatFrequency === "weekly" && !(DR.repeatDays || []).length)
+          return ($("#er").textContent = "Choose at least one weekday for this weekly repeat.");
+        if ((!ruleOccurrence || SERIES_EDIT_SCOPE === "all") && DR.repeatFrequency && DR.repeatUntil && DR.repeatUntil < DR.date)
+          return ($("#er").textContent = "The repeat end date must be on or after the first event date.");
+        if (ev && DR.repeatFrequency === "weekly" && DR.repeatUntil && (!ruleOccurrence || SERIES_EDIT_SCOPE === "all")) {
+          const weekdays = new Set((DR.repeatDays || []).map(Number));
+          let found = false;
+          for (let date = DR.date; date <= DR.repeatUntil && date <= ad(DR.date, 6); date = ad(date, 1))
+            if (weekdays.has(pd(date).getDay())) { found = true; break; }
+          if (!found) return ($("#er").textContent = "The end date is before the first selected weekday.");
+        }
         const o = {
           ...DR,
           title: DR.title.trim(),
@@ -4094,58 +4194,148 @@ ${typeField(DR.type)}
           o.end = "";
           o.loc = "";
         }
-        const previous = E ? S.items.find((x) => x.id == E) : null;
-        if (E && !previous) return ($("#er").textContent = "Item no longer exists. Reload and try again.");
-        const it = previous ? { ...previous, ...o } : { ...o, id: uid(), done: false };
         const button = $("#save-item");
         savingItem = true;
         if (button) { button.disabled = true; button.textContent = "Saving…"; }
         try {
-          if (!(await dbItem(it))) {
-            // Keep the ID if the task row saved but its completion record failed.
-            // Retrying updates that row instead of creating a duplicate.
-            DR.rid = it.rid;
-            $("#er").textContent = "Could not finish saving. Your draft is still here. Check the error and try again.";
-            return;
-          }
-          if (previous) Object.assign(previous, it);
-          else S.items.push(it);
-          D = o.date;
           const editing = !!E;
+          if (ruleOccurrence && SERIES_EDIT_SCOPE === "all") {
+            const offset = Math.round((pd(o.date) - pd(previous.date)) / 86400000);
+            const shiftedExceptions = (source.repeatExceptions || []).map((date) => ad(date, offset));
+            const shiftedUntil = DR.repeatUntil && DR.repeatUntil === source.repeatUntil && offset ? ad(source.repeatUntil, offset) : (DR.repeatUntil || "");
+            const updated = {
+              ...source, ...o, id: source.id, rid: source.rid,
+              date: DR.repeatFrequency ? (offset ? ad(source.date, offset) : source.date) : o.date,
+              repeatFrequency: DR.repeatFrequency || null,
+              repeatDays: DR.repeatFrequency === "weekly" ? (DR.repeatDays || []).map(Number) : [],
+              repeatUntil: DR.repeatFrequency ? shiftedUntil : "",
+              repeatExceptions: DR.repeatFrequency ? shiftedExceptions : [],
+              seriesId: DR.repeatFrequency ? source.seriesId : null,
+            };
+            if (!(await dbItem(updated))) {
+              $("#er").textContent = "Could not finish updating the repeating event. Check the error and try again.";
+              return;
+            }
+            Object.assign(source, updated);
+          } else if (ruleOccurrence && SERIES_EDIT_SCOPE === "one") {
+            const occurrenceDate = previous.occurrenceDate || previous.date;
+            const originalSource = { ...source };
+            const updatedSource = { ...source, repeatExceptions: [...new Set([...(source.repeatExceptions || []), occurrenceDate])] };
+            if (!(await dbItem(updatedSource))) {
+              $("#er").textContent = "Could not update this event in the repeating series. Check the error and try again.";
+              return;
+            }
+            Object.assign(source, updatedSource);
+            const standalone = { ...o, id: uid(), done: false, seriesId: null, repeatFrequency: null, repeatDays: [], repeatUntil: "", repeatExceptions: [] };
+            if (!(await dbItem(standalone))) {
+              await dbItem(originalSource);
+              Object.assign(source, originalSource);
+              $("#er").textContent = "Could not finish saving this one event. The series was restored where possible; check the error and try again.";
+              return;
+            }
+            S.items.push(standalone);
+          } else if (creatingRule) {
+            const rule = { ...o, id: uid(), done: false, seriesId: uid(), repeatFrequency: DR.repeatFrequency, repeatDays: DR.repeatFrequency === "weekly" ? (DR.repeatDays || []).map(Number) : [], repeatUntil: DR.repeatUntil || "", repeatExceptions: [] };
+            if (!(await dbItem(rule))) {
+              $("#er").textContent = "Could not finish saving the repeating event. Check the error and try again.";
+              return;
+            }
+            S.items.push(rule);
+          } else if (previous?.seriesId && SERIES_EDIT_SCOPE === "all") {
+            const series = S.items.filter((x) => x.seriesId === previous.seriesId);
+            const offset = Math.round((pd(o.date) - pd(previous.date)) / 86400000);
+            const changed = [];
+            for (const row of series) {
+              const updated = { ...row, ...o, id: row.id, rid: row.rid, seriesId: previous.seriesId, date: ad(row.date, offset) };
+              if (!(await dbItem(updated))) {
+                for (const entry of changed) await dbItem(entry.before);
+                $("#er").textContent = "Could not finish updating the series. The previous values were restored where possible. Check the error and try again.";
+                return;
+              }
+              changed.push({ before: row, updated });
+            }
+            for (const entry of changed) Object.assign(entry.before, entry.updated);
+          } else {
+            const it = previous
+              ? { ...previous, ...o, seriesId: previous.seriesId && SERIES_EDIT_SCOPE !== "all" ? null : previous.seriesId }
+              : { ...o, id: uid(), done: false };
+            if (!(await dbItem(it))) {
+              DR.rid = it.rid;
+              $("#er").textContent = "Could not finish saving. Your draft is still here. Check the error and try again.";
+              return;
+            }
+            if (previous) Object.assign(previous, it);
+            else S.items.push(it);
+          }
+          D = o.date;
           E = null;
           DR = null;
+          SERIES_EDIT_SCOPE = null;
           save();
-          toast(editing ? "Changes saved" : ev ? "Event saved to calendar" : "Task saved");
+          toast(editing ? "Changes saved" : creatingRule ? "Repeating event saved" : ev ? "Event saved to calendar" : "Task saved");
           go(ev ? "day" : "todo");
         } finally {
           savingItem = false;
           if (button?.isConnected) { button.disabled = false; button.textContent = E ? "Save changes" : "Add"; }
         }
       }
+      let SERIES_EDIT_SCOPE = null;
+      function openSeriesChoice(action, id) {
+        const item = calendarItem(id);
+        if (!item) return;
+        const overlay = document.createElement("div");
+        overlay.className = "ov";
+        overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+        const verb = action === "edit" ? "edit" : "delete";
+        overlay.innerHTML = `<div class="sheet"><header><h3>${action === "edit" ? "Edit repeating event" : "Delete repeating event"}</h3><button class="ic" onclick="this.closest('.ov').remove()" aria-label="Close">✕</button></header><p>This event is part of a repeating series. Would you like to ${verb} only this event or all events in the series?</p><div style="display:flex;gap:8px"><button class="btn alt" onclick="chooseSeriesScope('${action}','${id}','one');this.closest('.ov').remove()">Only this event</button><button class="btn" onclick="chooseSeriesScope('${action}','${id}','all');this.closest('.ov').remove()">All events in series</button></div></div>`;
+        document.body.appendChild(overlay);
+      }
+      function chooseSeriesScope(action, id, scope) {
+        const item = calendarItem(id);
+        if (!item) return;
+        if (action === "edit") {
+          SERIES_EDIT_SCOPE = scope;
+          E = id;
+          DR = null;
+          go("add");
+        } else delItem(id, scope);
+      }
       function openEv(id) {
         const i = calendarItem(id);
         if (!i) return;
-        const k = (a, b) =>
-            b ? `<div class="kv"><span>${a}</span><b>${b}</b></div>` : "";
+        const k = (a, b) => b ? `<div class="kv"><span>${a}</span><b>${b}</b></div>` : "";
         const o = document.createElement("div");
         o.className = "ov";
-        o.onclick = (e) => {
-          if (e.target == o) o.remove();
-        };
+        o.onclick = (e) => { if (e.target == o) o.remove(); };
+        const edit = i.seriesId ? `openSeriesChoice('edit','${i.id}')` : `E='${i.id}';DR=null;go('add')`;
+        const del = i.seriesId ? `openSeriesChoice('delete','${i.id}')` : `delItem('${i.id}')`;
         o.innerHTML = `<div class="sheet"><header><h3>${i.kind == "task" ? "Task" : "Event"} details</h3><button class="ic" onclick="this.closest('.ov').remove()" aria-label="Close">✕</button></header>${k("Title", esc(i.title))}${k("Date", L(i.date, { month: "short", day: "numeric", year: "numeric" }))}${i.kind == "event" ? k("Time", i.allDay ? "All day" : t12(i.time) + (i.end ? " – " + t12(i.end) : "")) + k("Location", esc(i.loc)) : ""}${k("Type", esc(typeInfo(i.type)[0]))}${i.holiday ? "" : k("Priority", `<span class="p${i.pri}">${i.pri} · ${PN[i.pri]}</span>`)}${k("Description", esc(i.desc))}
-${i.holiday ? '<p class="photo-hint">Automatically added U.S. federal holiday</p>' : `<div style="display:flex;gap:8px"><button class="btn alt" onclick="E='${i.id}';DR=null;go('add')">✎ Edit</button><button class="btn del" onclick="delItem('${i.id}')">Delete</button></div>`}</div>`;
+${i.holiday ? '<p class="photo-hint">Automatically added U.S. federal holiday</p>' : `<div style="display:flex;gap:8px"><button class="btn alt" onclick="${edit}">✎ Edit</button><button class="btn del" onclick="${del}">Delete</button></div>`}</div>`;
         $("#app").appendChild(o);
       }
-      async function delItem(id) {
+      async function delItem(id, scope = "one") {
         if (itemBusy.has(id)) return;
-        const d = S.items.find((i) => i.id == id);
+        const d = calendarItem(id);
         if (!d) return;
         itemBusy.add(id);
         try {
-          if (!(await dbDel(d))) return;
-          S.items = S.items.filter((i) => i.id != id);
+          const wholeSeries = scope === "all" && !!d.seriesId;
+          if (d.sourceId && !wholeSeries) {
+            const source = S.items.find((i) => i.id === d.sourceId);
+            if (!source) return;
+            const occurrenceDate = d.occurrenceDate || d.date;
+            const updated = { ...source, repeatExceptions: [...new Set([...(source.repeatExceptions || []), occurrenceDate])] };
+            if (!(await dbItem(updated))) return;
+            Object.assign(source, updated);
+            save();
+            toast("Event deleted");
+            r();
+            return;
+          }
+          if (!(await (wholeSeries ? dbDelSeries(d) : dbDel(d)))) return;
+          S.items = S.items.filter((i) => wholeSeries ? i.seriesId !== d.seriesId : i.id != id);
           save();
-          toast("Deleted");
+          toast(wholeSeries ? "Repeating series deleted" : "Deleted");
           r();
         } finally { itemBusy.delete(id); }
       }
