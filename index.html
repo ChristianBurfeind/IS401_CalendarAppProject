@@ -983,6 +983,11 @@
         gap: 8px;
         margin: 4px 0 10px;
       }
+      .profile-field-value .int-chips {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+      }
       .int-chip {
         display: inline-flex;
         align-items: center;
@@ -2399,6 +2404,7 @@ body:has(#auth) {
         AK = "task",
         DR = null,
         PE = false,
+        profileInterestDraft = [],
         LM = "in",
         F = "all",
         Q = "";
@@ -3392,7 +3398,7 @@ body:has(#auth) {
         return `<div class="main login"><div class="av">👤</div><h1>The Daily Blend</h1>
 ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the setup guide for missing tables or columns, then reload. If birth_date is missing, run tasks-events-update.sql.</div>` : ""}
 <div class="seg"><a href="#login" class="${c ? "" : "on"}" onclick="LM='in';r()">Log in</a><a href="#login" class="${c ? "on" : ""}" onclick="LM='up';r()">Create account</a></div>
-<form id="auth-form" ${c ? "novalidate" : ""} onsubmit="event.preventDefault();auth()">${c ? '<p class="signup-note">Only Name, Email address, and Password are required. You can add everything else later in your profile.</p>' : ""}${c ? `<label for="su-name">Name <span class="required-star" aria-hidden="true">*</span> <small class="required-label">Required</small></label><input id="su-name" type="text" maxlength="25" required autocomplete="name" oninput="chk()">
+<form id="auth-form" ${c ? "novalidate" : ""} onsubmit="event.preventDefault();auth()">${c ? '<p class="signup-note">Only Full name, Email address, and Password are required. You can add everything else later in your profile.</p>' : ""}${c ? `<label for="su-name">Full name <span class="required-star" aria-hidden="true">*</span> <small class="required-label">Required</small></label><input id="su-name" type="text" maxlength="50" required autocomplete="name" aria-describedby="su-name-help" oninput="chk()"><small id="su-name-help" class="signup-field-help">Up to 50 characters. Use letters, spaces, hyphens, and apostrophes.</small>
 <label for="su-school">School <small class="optional-label">– Optional</small></label><input id="su-school" type="text" maxlength="40" placeholder="Find campus events" autocomplete="organization" oninput="chk()">
 <label for="su-major">Major <small class="optional-label">– Optional</small></label><input id="su-major" type="text" maxlength="40" placeholder="Find major-related events" oninput="chk()">
 <label for="su-work">Work <small class="optional-label">– Optional</small></label><input id="su-work" type="text" maxlength="40" placeholder="Find career events" oninput="chk()">
@@ -3457,15 +3463,20 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
   </p>
 </details>
 <label for="su-gender">Gender <small class="optional-label">– Optional</small></label><select id="su-gender" onchange="chk()"><option value="">Select gender</option><option>Female</option><option>Male</option><option>Non-binary</option><option>Other</option></select>
-<label for="su-interests">Interests <small class="optional-label">– Optional</small></label><input id="su-interests" type="text" maxlength="250" placeholder="Find events you’ll enjoy" oninput="chk()">` : ""}<label for="u">Email address${c ? ' <span class="required-star" aria-hidden="true">*</span> <small class="required-label">Required</small>' : ""}</label><input id="u" type="email" value="${esc(pendingEmail)}" required autocomplete="email" oninput="chk()">
+<label for="su-interests">Interests <small class="optional-label">– Optional</small></label><input id="su-interests" type="text" maxlength="100" placeholder="Find events you’ll enjoy" oninput="chk()">` : ""}<label for="u">Email address${c ? ' <span class="required-star" aria-hidden="true">*</span> <small class="required-label">Required</small>' : ""}</label><input id="u" type="email" value="${esc(pendingEmail)}" required autocomplete="email" oninput="chk()">
 <label for="pw">Password${c ? ' <span class="required-star" aria-hidden="true">*</span> <small class="required-label">Required</small>' : ""}</label><input id="pw" type="password" required minlength="${c ? 8 : 1}" autocomplete="${c ? "new-password" : "current-password"}" oninput="chk()">
 <label style="display:flex;gap:8px;align-items:center"><input id="st" type="checkbox" ${remember ? "checked" : ""}> Stay logged in</label>
 <div id="er" class="err" role="status" aria-live="polite"></div><button class="btn ${c ? "is-incomplete" : ""}" id="go" ${c ? "" : "disabled"}>${c ? "Create account" : "Log in"}</button></form>
 <button class="btn alt" onclick="startDemo()">Try demo (no login)</button>${!useSB ? "<p>Live login requires your Supabase URL and public key. Demo changes are temporary.</p>" : ""}</div>`;
       }
-      // Names may include numbers and symbols, but must contain at least one letter.
+      // Accept accented letters, spaces, hyphens, and apostrophes in full names.
       function validSignupName(value) {
-        return value.length <= 25 && /\p{L}/u.test(value.trim());
+        const name = value.trim();
+        return (
+          name.length > 0 &&
+          name.length <= 50 &&
+          /^[\p{L}\p{M}]+(?:[ '\u2019-][\p{L}\p{M}]+)*$/u.test(name)
+        );
       }
       function authFieldsValid() {
         const signup = LM === "up";
@@ -3480,10 +3491,10 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
       function signupErrors() {
         const errors = [];
         const check = (id, message) => errors.push({ id, message });
-        if (!$("#su-name").value.trim()) check("su-name", "You must fill out Name before creating an account.");
-        else if ($("#su-name").value.length > 25) check("su-name", "Name must be 25 characters or fewer.");
-        else if (!validSignupName($("#su-name").value)) check("su-name", "Please enter a valid name/nickname containing at least one letter.");
-        for (const [id, label, limit] of [["su-school", "School", 40], ["su-major", "Major", 40], ["su-work", "Work", 40], ["su-interests", "Interests", 250]])
+        if (!$("#su-name").value.trim()) check("su-name", "Enter your full name.");
+        else if ($("#su-name").value.trim().length > 50) check("su-name", "Full name must be 50 characters or fewer.");
+        else if (!validSignupName($("#su-name").value)) check("su-name", "Use letters, spaces, hyphens, and apostrophes only.");
+        for (const [id, label, limit] of [["su-school", "School", 40], ["su-major", "Major", 40], ["su-work", "Work", 40], ["su-interests", "Interests", 100]])
           if ($("#" + id).value.length > limit) check(id, label + " must be " + limit + " characters or fewer.");
         if (!$("#u").value.trim()) check("u", "You must fill out Email address before creating an account.");
         else if (!$("#u").validity.valid) check("u", "Enter a valid email address before creating an account.");
@@ -4684,11 +4695,65 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
       function normInterests(value) {
         return [...new Set(String(value || "").split(",").map(x => x.trim().toLowerCase()).filter(Boolean))];
       }
+      function interestChips(items, editable = false) {
+        if (!items.length) return `<span class="profile-age-hint">No interests added yet.</span>`;
+        return items.map((interest, index) => `
+          <span class="int-chip">${esc(interest)}${editable ? `<button type="button" onclick="removeProfileInterest(${index})" aria-label="Remove interest ${esc(interest)}">×</button>` : ""}</span>
+        `).join("");
+      }
+      function renderProfileInterestChips() {
+        const list = $("#p-interest-chips");
+        if (list) list.innerHTML = interestChips(profileInterestDraft, true);
+      }
+      function addProfileInterest() {
+        const input = $("#p-interest-input");
+        const interest = input?.value.trim() || "";
+        if (!interest) {
+          input?.focus();
+          return false;
+        }
+        if (interest.length > 100) {
+          $("#profile-error").textContent = "Each interest must be 100 characters or fewer.";
+          input.focus();
+          return false;
+        }
+        if (profileInterestDraft.some((item) => item.toLowerCase() === interest.toLowerCase())) {
+          $("#profile-error").textContent = "That interest is already on your list.";
+          input.focus();
+          return false;
+        }
+        profileInterestDraft.push(interest);
+        input.value = "";
+        $("#profile-error").textContent = "";
+        renderProfileInterestChips();
+        input.focus();
+        return true;
+      }
+      function profileInterestKeydown(event) {
+        if (event.key === "Enter" || event.key === ",") {
+          event.preventDefault();
+          addProfileInterest();
+        }
+      }
+      function removeProfileInterest(index) {
+        profileInterestDraft.splice(index, 1);
+        $("#profile-error").textContent = "";
+        renderProfileInterestChips();
+      }
+      function interestsEditor() {
+        return `<label for="p-interest-input">Interests</label>
+          <div id="p-interest-chips" class="int-chips" aria-label="Your interests">${interestChips(profileInterestDraft, true)}</div>
+          <div class="int-add">
+            <input id="p-interest-input" type="text" maxlength="100" placeholder="Type an interest" aria-describedby="p-interest-help" onkeydown="profileInterestKeydown(event)">
+            <button type="button" class="add" onclick="addProfileInterest()">Add</button>
+          </div>
+          <small id="p-interest-help" class="profile-age-hint">Add interests one at a time. Press Enter or select Add. Each can be up to 100 characters.</small>`;
+      }
       function birthPicker(id, value, onChange) {
         return `<input id="${esc(id)}" type="date" value="${esc(value || "")}" max="${iso(new Date())}" oninput="${esc(onChange || "")}">`;
       }
       function interestsSection() {
-        return `<div class="kv"><span>Interests</span><div class="profile-field-value"><b>${esc((S.interests || []).join(", ")) || "—"}</b>${fieldPencil("interests", "Interests")}</div></div>`;
+        return `<div class="kv"><span>Interests</span><div class="profile-field-value"><div class="int-chips">${interestChips(S.interests || [])}</div>${fieldPencil("interests", "Interests")}</div></div>`;
       }
       function profilePictureButton() {
         return `<button type="button" class="av profile-photo-button" onclick="openPicture()" aria-label="Change profile picture or avatar" title="Change profile picture or avatar">
@@ -4822,7 +4887,7 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
         }
       }
       const PROFILE_FIELDS = [
-        ["name", "Name"],
+        ["name", "Full name"],
         ["school", "School"],
         ["work", "Work"],
         ["major", "Major"],
@@ -4833,6 +4898,7 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
       ];
       function editProfileField(field) {
         if (!PE) {
+          profileInterestDraft = [...(S.interests || [])];
           PE = true;
           r();
         }
@@ -4878,9 +4944,7 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
       function prof() {
         const p = S.prof;
         const fields = PROFILE_FIELDS.map(([field, label]) => {
-          if (field === "interests") return PE
-            ? `<label for="p-interests">Interests (comma-separated)</label><input id="p-interests" type="text" maxlength="250" value="${esc((S.interests || []).join(", "))}">`
-            : interestsSection();
+          if (field === "interests") return PE ? interestsEditor() : interestsSection();
           if (field === "age") {
             if (PE) return "";
             const a = ageFromBirthDate(p.birthDate) ?? p.age;
@@ -4890,15 +4954,15 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
             field === "interests" ? S.interests.join(", ") : p[field];
           return PE
             ? `<label for="p-${field}">${label}${field === "interests" ? " (comma-separated)" : ""}</label>
-            ${field === "birthDate" ? birthPicker("p-birthDate", value, "updateAgePreview()") : field === "gender" ? `<select id="p-gender"><option value="">Select…</option>${["Female", "Male", "Non-binary", "Other"].map((g) => `<option ${value === g ? "selected" : ""}>${g}</option>`).join("")}</select>` : `<input id="p-${field}" type="text" ${field === "name" ? 'maxlength="25"' : ["school", "work", "major"].includes(field) ? 'maxlength="40"' : ""} value="${esc(value)}">`}${field === "birthDate" ? `<small id="profile-age-preview" class="profile-age-hint">${esc(ageDescription(value))}</small><small class="profile-age-hint">Optional. Used to calculate your age and celebrate your birthday.</small>` : ""}`
+            ${field === "birthDate" ? birthPicker("p-birthDate", value, "updateAgePreview()") : field === "gender" ? `<select id="p-gender"><option value="">Select…</option>${["Female", "Male", "Non-binary", "Other"].map((g) => `<option ${value === g ? "selected" : ""}>${g}</option>`).join("")}</select>` : `<input id="p-${field}" type="text" ${field === "name" ? 'maxlength="50" autocomplete="name" aria-describedby="p-name-help"' : ["school", "work", "major"].includes(field) ? 'maxlength="40"' : ""} value="${esc(value)}">${field === "name" ? '<small id="p-name-help" class="profile-age-hint">Up to 50 characters. Use letters, spaces, hyphens, and apostrophes.</small>' : ""}`}${field === "birthDate" ? `<small id="profile-age-preview" class="profile-age-hint">${esc(ageDescription(value))}</small><small class="profile-age-hint">Optional. Used to calculate your age and celebrate your birthday.</small>` : ""}`
             : `<div class="kv"><span>${label}</span><div class="profile-field-value"><b>${field === "birthDate" ? birthDateDisplay(value) : esc(value) || "—"}</b>${fieldPencil(field, label)}</div></div>`;
         }).join("");
         const body = `${profilePictureButton()}<p class="photo-hint">Click your picture to change it</p>
-          ${PE ? `<form onsubmit="event.preventDefault();saveP()">${fields}<p id="profile-error" class="err" role="status" aria-live="polite"></p><button id="save-profile" class="btn" type="submit">Save changes</button><button class="btn alt" type="button" onclick="PE=false;r()">Cancel</button></form>` : fields}
+          ${PE ? `<form onsubmit="event.preventDefault();saveP()">${fields}<p id="profile-error" class="err" role="status" aria-live="polite"></p><button id="save-profile" class="btn" type="submit">Save changes</button><button class="btn alt" type="button" onclick="PE=false;profileInterestDraft=[];r()">Cancel</button></form>` : fields}
           ${!PE ? `${profileConnections()}<button class="btn alt" onclick="logout()">Log out</button>` : ""}
           <section class="account-danger"><h2>Delete account</h2><p>Permanently remove your account, profile, tasks, events, settings, and uploaded profile pictures.</p><button type="button" class="btn delete-account-button" onclick="openDeleteAccount()">Delete my account</button></section>`;
         return shell("Profile", body, {
-          left: '<button class="ic" onclick="PE=false;go(S.set.view)" aria-label="Back">‹</button>',
+          left: '<button class="ic" onclick="PE=false;profileInterestDraft=[];go(S.set.view)" aria-label="Back">‹</button>',
           right: "<span></span>",
         });
       }
@@ -5013,7 +5077,7 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
         }
       }
       async function saveP() {
-        for (const [field, label, limit] of [["name", "Name", 25], ["school", "School", 40], ["work", "Work", 40], ["major", "Major", 40], ["interests", "Interests", 250]]) {
+        for (const [field, label, limit] of [["name", "Full name", 50], ["school", "School", 40], ["work", "Work", 40], ["major", "Major", 40]]) {
           const input = $("#p-" + field);
           if (input && input.value.length > limit) {
             $("#profile-error").textContent = label + " must be " + limit + " characters or fewer.";
@@ -5026,8 +5090,14 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
         ["name", "school", "work", "major", "birthDate", "gender"].forEach(
           (k) => (np[k] = $("#p-" + k).value.trim()),
         );
+        if (!$("#p-name").value.trim()) {
+          $("#profile-error").textContent = "Enter your full name.";
+          $("#p-name").focus();
+          $("#p-name").scrollIntoView({ block: "center" });
+          return;
+        }
         if (!validSignupName($("#p-name").value)) {
-          $("#profile-error").textContent = "Please enter a valid name/nickname containing at least one letter.";
+          $("#profile-error").textContent = "Use letters, spaces, hyphens, and apostrophes only.";
           $("#p-name").focus();
           $("#p-name").scrollIntoView({ block: "center" });
           return;
@@ -5037,7 +5107,8 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
             "Choose a valid date of birth that is not in the future.";
           return;
         }
-        const ints = normInterests($("#p-interests")?.value ?? S.interests.join(", "));
+        if ($("#p-interest-input")?.value.trim() && !addProfileInterest()) return;
+        const ints = profileInterestDraft.map((interest) => interest.trim()).filter(Boolean);
         const button = $("#save-profile");
         if (button?.disabled) return;
         if (button) button.disabled = true;
@@ -5047,6 +5118,7 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
         }
         S.prof = np;
         S.interests = ints;
+        profileInterestDraft = [];
         PE = false;
         save();
         toast("Profile saved");
