@@ -347,22 +347,6 @@
         overflow: hidden;
         cursor: pointer;
       }
-      .sug {
-        position: absolute;
-        left: 54px;
-        right: 2px;
-        height: 44px;
-        padding: 4px 7px;
-        border: 1.5px dashed var(--pri);
-        border-radius: 8px;
-        font-size: 11px;
-        color: var(--pri);
-        background: var(--card);
-      }
-      .sug button {
-        float: right;
-        margin-top: -2px;
-      }
       .wk {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
@@ -3554,7 +3538,7 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
 <label for="pw">Password${c ? ' <span class="required-star" aria-hidden="true">*</span> <small class="required-label">Required</small>' : ""}</label><input id="pw" type="password" required minlength="${c ? 8 : 1}" autocomplete="${c ? "new-password" : "current-password"}" oninput="chk()">
 <label style="display:flex;gap:8px;align-items:center"><input id="st" type="checkbox" ${remember ? "checked" : ""}> Stay logged in</label>
 <div id="er" class="err" role="status" aria-live="polite"></div><button class="btn ${c ? "is-incomplete" : ""}" id="go" ${c ? "" : "disabled"}>${c ? "Create account" : "Log in"}</button></form>
-<button class="btn alt" onclick="startDemo()">Try demo (no login)</button>${!useSB ? "<p>Live login requires your Supabase URL and public key. Demo changes are temporary.</p>" : ""}</div>`;
+${!useSB ? "<p>Live login requires your Supabase URL and public key.</p>" : ""}</div>`;
       }
       // Accept accented letters, spaces, hyphens, and apostrophes in full names.
       function validSignupName(value) {
@@ -3783,35 +3767,6 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
           `;
         };
 
-        const free = (h) =>
-          !timedEvents.some((e) => {
-            const s = mins(e.time);
-            const en = e.end ? mins(e.end) : s + 60;
-
-            return s < h * 60 + 60 && en > h * 60;
-          });
-
-        const sg = !S.set.sug
-          ? ""
-          : (free(12)
-              ? `<div class="sug" style="top:${(12 - startHour) * 48 + 2}px">
-                  🍽 Lunch: Café Rio, 0.3 mi
-                  <button class="add"
-                    onclick="addSug('Lunch at Café Rio','12:00','13:00','personal')">
-                    Add
-                  </button>
-                </div>`
-              : "") +
-            (free(19)
-              ? `<div class="sug" style="top:${(19 - startHour) * 48 + 2}px">
-                  ⚽ BYU Soccer Game, 7 pm
-                  <button class="add"
-                    onclick="addSug('BYU Soccer Game','19:00','21:00','social')">
-                    Add
-                  </button>
-                </div>`
-              : "");
-
         const allDaySection = allDayEvents.length
           ? `
             <section aria-label="All-day events" style="margin-bottom:20px">
@@ -3856,7 +3811,6 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
                 ${allDaySection}
                 <div class="grid" style="height:${(24 - startHour) * 48}px">
                   ${g}
-                  ${sg}
                   ${timedEvents.map(blk).join("")}
                 </div>
               </div>
@@ -3890,26 +3844,6 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
             `,
           { nav: "c", fab: 1 },
         );
-      }
-      async function addSug(title, a, b, type) {
-        const it = {
-          id: uid(),
-          kind: "event",
-          title,
-          date: D,
-          time: a,
-          end: b,
-          type,
-          pri: 3,
-          loc: "",
-          desc: "",
-          done: false,
-        };
-        if (!(await dbItem(it))) return;
-        S.items.push(it);
-        save();
-        toast("Added to your calendar");
-        r();
       }
       function week() {
         const s = wkStart(D),
@@ -4339,148 +4273,12 @@ ${i.holiday ? '<p class="photo-hint">Automatically added U.S. federal holiday</p
           r();
         } finally { itemBusy.delete(id); }
       }
-      let CAT = [
-        [
-          "IS Career Fair",
-          1,
-          "13:00",
-          "15:00",
-          "career",
-          "Wilk Ballroom",
-          "Meet employers hiring IS majors.",
-          0,
-          ["career", "business"],
-        ],
-        [
-          "AI in Business Club",
-          3,
-          "19:00",
-          "20:00",
-          "career",
-          "TNRB 150",
-          "Guest speaker on AI in industry.",
-          0,
-          ["career", "ai"],
-        ],
-        [
-          "BYU Soccer Game",
-          0,
-          "19:00",
-          "21:00",
-          "social",
-          "South Field",
-          "Home match under the lights.",
-          0,
-          ["sports", "social"],
-        ],
-        [
-          "Resume Workshop",
-          2,
-          "16:00",
-          "17:00",
-          "career",
-          "Career Center",
-          "Polish your resume for recruiters.",
-          0,
-          ["career"],
-        ],
-        [
-          "Campus Devotional",
-          2,
-          "11:00",
-          "12:00",
-          "school",
-          "Marriott Center",
-          "Weekly campus devotional.",
-          0,
-          ["faith"],
-        ],
-        [
-          "Study Skills Seminar",
-          4,
-          "12:00",
-          "13:00",
-          "school",
-          "Library 3rd Floor",
-          "Midterm prep strategies.",
-          0,
-          ["school"],
-        ],
-        [
-          "Ward Game Night",
-          5,
-          "19:30",
-          "21:30",
-          "social",
-          "Stake Center",
-          "Board games and snacks.",
-          0,
-          ["social", "games"],
-        ],
-      ];
-      const fy = (c) => {
-        const hay = (c[0] + " " + c[6] + " " + (c[8] || []).join(" ")).toLowerCase();
-        return S.interests.some((i) =>
-          new RegExp(
-            "(^|[^a-z0-9])" + i.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^a-z0-9]|$)",
-          ).test(hay),
-        );
-      };
       function disc() {
-        const q = Q.toLowerCase(),
-          L2 = CAT.filter(
-            (c) =>
-              (F == "all" || c[4] == F) &&
-              (!q || (c[0] + c[6]).toLowerCase().includes(q)),
-          ).sort((a, b) => a[1] - b[1] || mins(a[2]) - mins(b[2]));
-        const row = (c) => {
-          const d = ad(TODAY, c[1]),
-            has = S.items.some((i) => i.title == c[0] && i.date == d);
-          return `<div class="row" style="cursor:default"><div class="t"><b>${c[0]}</b><small>${c[1] == 0 ? "Today" : L(d, { weekday: "long", month: "short", day: "numeric" })} · ${t12(c[2])}–${t12(c[3])}</small><small>${c[6]}</small></div><button class="add" ${has ? "disabled" : ""} onclick="addDisc(${CAT.indexOf(c)})">${has ? "✓ Added" : "ADD"}</button></div>`;
-        };
         return shell(
           "Discovery",
-          `<input id="q" placeholder="🔍 Search events" value="${esc(Q)}" oninput="Q=this.value;const p=this.selectionStart;r();$('#q').focus();$('#q').setSelectionRange(p,p)"><div class="chips">${[
-            ["all", "All"],
-            ["school", "School"],
-            ["social", "Social"],
-            ["career", "Career"],
-          ]
-            .map(
-              ([k, n]) =>
-                `<button class="${F == k ? "on" : ""}" onclick="F='${k}';r()">${n}</button>`,
-            )
-            .join("")}</div>
-${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Events</h2>` : "<h2>Events</h2>"}${L2.filter(
-            (c) => !fy(c),
-          )
-            .map(row)
-            .join(
-              "",
-            )}${L2.length ? "" : '<p style="text-align:center;color:var(--mut)">No events match.</p>'}`,
+          '<div class="empty-state" style="text-align:center;padding:36px 16px"><h2>No suggestions available</h2><p style="color:var(--mut)">Suggestions will appear here when they are ready.</p></div>',
           { nav: "d" },
         );
-      }
-      async function addDisc(i) {
-        const c = CAT[i],
-          it = {
-            id: uid(),
-            kind: "event",
-            title: c[0],
-            date: ad(TODAY, c[1]),
-            time: c[2],
-            end: c[3],
-            loc: c[5],
-            type: c[4],
-            pri: 2,
-            desc: c[6],
-            done: false,
-          };
-        if (!(await dbItem(it))) return;
-        S.items.push(it);
-        save();
-        toast("Added to your calendar");
-        r();
       }
       const tgl = (k) =>
         `<button class="tog ${S.set[k] ? "on" : ""}" role="switch" aria-checked="${!!S.set[k]}" onclick="setS('${k}',!S.set.${k})"></button>`;
@@ -4516,7 +4314,6 @@ ${L2.some(fy) ? `<h2>For You</h2>${L2.filter(fy).map(row).join("")}<h2>Other Eve
             ["plum", "Plum"],
           ])}</div>
           <div class="sw">In-calendar suggestions ${tgl("sug")}</div>
-
           <p style="color:var(--mut);font-size:12px">
             Reminders: homework due within 24 hours and social events
             within 4 hours show on your Summary page.
