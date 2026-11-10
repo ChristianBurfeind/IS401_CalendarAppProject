@@ -2378,8 +2378,8 @@ body:has(#auth) {
         personal: ["Personal", "#1a9c8a"],
         career: ["Career", "#00838f"],
       };
-      const PS = { 1: "!!!", 2: "!!", 3: "!" },
-        PN = { 1: "Urgent", 2: "Standard", 3: "Flexible" };
+      const PS = { 0: "", 1: "!", 2: "!!", 3: "!!!" },
+        PN = { 0: "None", 1: "Low", 2: "Medium", 3: "High" };
       const iso = (d) =>
         d.getFullYear() +
         "-" +
@@ -2653,7 +2653,25 @@ body:has(#auth) {
           <input id="f-type" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="type-options" aria-describedby="type-help" autocomplete="off" maxlength="20" value="${esc(typeInfo(value)[0])}" onfocus="renderTypeChoices(true)" oninput="renderTypeChoices()" onkeydown="typeKeydown(event)">
           <div id="type-options" role="listbox" aria-label="Suggested types" hidden></div></div><small id="type-help">Choose a type or enter your own. Previously used types are saved to your account.</small>`;
       }
-      const readPriority = (v) => ({urgent: 1, standard: 2, flexible: 3}[String(v).toLowerCase()] || ([1,2,3].includes(+v) ? +v : 2));
+      const readPriority = (v) => {
+  if (v === null || v === undefined || v === "") return 0;
+
+  const labels = {
+    none: 0,
+    low: 1,
+    medium: 2,
+    high: 3,
+    urgent: 1,
+    standard: 2,
+    flexible: 3
+  };
+
+  const value = String(v).toLowerCase();
+  if (Object.hasOwn(labels, value)) return labels[value];
+
+  const number = Number(v);
+  return [0, 1, 2, 3].includes(number) ? number : 0;
+};
       const tcand = (n) => {
         const a = [
           n,
@@ -3404,17 +3422,31 @@ body:has(#auth) {
           k("task", "Onboarding", ad(t, 1), "work", 2),
         );
       }
-      function shell(title, body, o = {}) {
-        return `<div class="top">${o.left || '<a class="ic" href="#settings">☰</a>'}<h1>${title}</h1>${o.right || `<a class="ic" href="#profile">${S.photo ? `<img src="${S.photo}" alt="">` : "👤"}</a>`}</div><div class="main">${body}</div>${o.fab ? '<button class="fab" onclick="newItem()" aria-label="Add task or event">+ Add</button>' : ""}${o.nav ? `<nav class="nav"><a class="${o.nav == "c" ? "on" : ""}" href="#${S.set.view}">📅 Calendar</a><a class="${o.nav == "t" ? "on" : ""}" href="#todo">✅ To-Do</a><a class="${o.nav == "d" ? "on" : ""}" href="#discovery">🔎 Discovery</a></nav>` : ""}`;
-      }
-      const seg = (v) =>
-        `<div class="seg">${["day", "week", "month"].map((x) => `<a class="${x == v ? "on" : ""}" href="#${x}">${x[0].toUpperCase() + x.slice(1)}</a>`).join("")}</div>`;
-      const newItem = (k) => {
-        E = null;
-        DR = null;
-        AK = location.hash === "#todo" ? "task" : "event";
-        go("add");
-      };
+      
+function shell(title, body, o = {}) {
+  return `<div class="top">${o.left || '<a class="ic" href="#settings">☰</a>'}<h1>${title}</h1>${o.right || `<a class="ic" href="#profile">${S.photo ? `<img src="${S.photo}" alt="">` : "👤"}</a>`}</div>
+  <div class="main">${body}</div>
+  ${o.fab ? '<button class="fab" onclick="newItem()" aria-label="Add task or event">+ Add</button>' : ""}
+  ${o.nav ? `<nav class="nav">
+    <a class="${o.nav == "s" ? "on" : ""}" href="#summary">📊 Summary</a>
+    <a class="${o.nav == "c" ? "on" : ""}" href="#day">📅 Calendar</a>
+    <a class="${o.nav == "t" ? "on" : ""}" href="#todo">✅ To-Do</a>
+    <a class="${o.nav == "d" ? "on" : ""}" href="#discovery">🔎 Discovery</a>
+  </nav>` : ""}`;
+}
+const seg = (v) =>
+  `<div class="seg">${["day", "week", "month"]
+    .map((x) =>
+      `<a class="${x == v ? "on" : ""}" href="#${x}">${x[0].toUpperCase() + x.slice(1)}</a>`
+    )
+    .join("")}</div>`;
+
+const newItem = (k) => {
+  E = null;
+  DR = null;
+  AK = location.hash === "#todo" ? "task" : "event";
+  go("add");
+};
       function step(n, v) {
         if (v == "day") D = ad(D, n);
         else if (v == "week") D = ad(D, 7 * n);
@@ -3726,11 +3758,20 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
               .map((e) => evRow(e))
               .join("") || "<small>No events today.</small>"
           }<h2>Today's tasks</h2>${tasks(TODAY).map(trow).join("") || "<small>No tasks today.</small>"}`,
-          { nav: "c", fab: 1 },
+          { nav: "s", fab: 1 },
         );
       }
       const evRow = (e) =>
-        `<div class="row" onclick="openEv('${e.id}')"><span class="dot" style="background:${typeInfo(e.type)[1]}"></span><span class="t"><b>${esc(e.title)}</b><small>${e.allDay ? "" : t12(e.time) + (e.end ? "–" + t12(e.end) : "")}${e.loc ? (e.allDay ? "" : " · ") + esc(e.loc) : ""}</small></span></div>`;
+  `<div class="row" onclick="openEv('${e.id}')">
+    <span class="dot" style="background:${e.color || typeInfo(e.type)[1]}"></span>
+    <span class="t">
+      <b>${esc(e.title)}</b>
+      <small>
+        ${e.allDay ? "" : t12(e.time) + (e.end ? "–" + t12(e.end) : "")}
+        ${e.loc ? (e.allDay ? "" : " · ") + esc(e.loc) : ""}
+      </small>
+    </span>
+  </div>`;
       function day() {
         const ev = evs(D);
         const allDayEvents = ev.filter((e) => e.allDay);
@@ -3757,7 +3798,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
               style="
                 top:${((s - startHour * 60) / 60) * 48 + 1}px;
                 height:${Math.max(24, ((en - s) / 60) * 48 - 3)}px;
-                background:${typeInfo(e.type)[1]}
+                background:${e.color || typeInfo(e.type)[1]}
               "
               onclick="openEv('${e.id}')"
             >
@@ -3784,7 +3825,7 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
                         padding:10px 12px;
                         border:0;
                         border-radius:10px;
-                        background:${typeInfo(e.type)[1]};
+                        background:${e.color || typeInfo(e.type)[1]};
                         color:white;
                         text-align:left;
                         font:inherit;
@@ -4034,7 +4075,8 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
                 allDay: false,
                 loc: "",
                 type: "school",
-                pri: 2,
+                color: "",
+                pri: 0,
                 desc: "",
                 repeatFrequency: null,
                 repeatDays: [pd(D).getDay()],
@@ -4049,7 +4091,26 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
 <label>Title</label><input id="f-title" maxlength="75" value="${esc(DR.title)}"><label>Date</label><input id="f-date" type="date" value="${DR.date}" onchange="rd();r()">
 ${ev ? `<label class="all-day-toggle" for="f-all-day"><input id="f-all-day" type="checkbox" ${DR.allDay ? "checked" : ""} onchange="rd();r()"> All day</label><div ${DR.allDay ? "hidden" : ""}><div style="display:flex;gap:8px"><div style="flex:1"><label>Start</label><input id="f-time" type="time" value="${DR.time || "12:00"}"></div><div style="flex:1"><label>End</label><input id="f-end" type="time" value="${DR.end || "13:00"}"></div></div></div><label>Location</label><input id="f-loc" maxlength="100" value="${esc(DR.loc)}">${repeatControls ? `<label for="f-repeat">Repeat</label><select id="f-repeat" onchange="rd();r()"><option value="none" ${!DR.repeatFrequency ? "selected" : ""}>Does not repeat</option><option value="daily" ${DR.repeatFrequency === "daily" ? "selected" : ""}>Daily</option><option value="weekly" ${DR.repeatFrequency === "weekly" ? "selected" : ""}>Weekly</option><option value="monthly" ${DR.repeatFrequency === "monthly" ? "selected" : ""}>Monthly</option></select><div ${DR.repeatFrequency === "weekly" ? "" : "hidden"}><label>Repeat on</label><div class="repeat-days">${[[0,"Sun"],[1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"],[6,"Sat"]].map(([n,d]) => `<label class="repeat-day-option"><input class="repeat-day" type="checkbox" value="${n}" ${(DR.repeatDays || []).map(Number).includes(n) ? "checked" : ""} onchange="rd()">${d}</label>`).join("")}</div></div>${DR.repeatFrequency === "monthly" ? `<small class="repeat-help">Repeats on this date each month; months without that date are skipped.</small>` : ""}<div ${DR.repeatFrequency ? "" : "hidden"}><label for="f-repeat-until">End date (optional)</label><input id="f-repeat-until" type="date" min="${DR.date}" value="${DR.repeatUntil || ""}" onchange="rd()"><small class="repeat-help">Leave blank to repeat indefinitely.</small></div>` : ""}` : ""}
 ${typeField(DR.type)}
-<label>Priority</label><select id="f-pri">${[1, 2, 3].map((p) => `<option value="${p}" ${DR.pri == p ? "selected" : ""}>${p} · ${PN[p]} ${PS[p]}</option>`).join("")}</select>
+${ev ? `
+  <label for="f-color">Event Color</label>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+    <input
+      id="f-color"
+      type="color"
+      value="${DR.color || typeInfo(DR.type)[1]}"
+      style="width:55px;height:40px;padding:3px;cursor:pointer"
+    >
+    <span>Choose a custom event color</span>
+  </div>
+` : ""}
+<label for="f-pri">Priority (Optional)</label>
+<select id="f-pri">
+  ${[0, 1, 2, 3].map((p) =>
+    `<option value="${p}" ${DR.pri == p ? "selected" : ""}>
+      ${PN[p]} ${PS[p]}
+    </option>`
+  ).join("")}
+</select>
 <label>Description</label><textarea id="f-desc" maxlength="500" rows="2">${esc(DR.desc)}</textarea><div class="err" id="er"></div><button id="save-item" class="btn" onclick="saveItem()">${it ? "Save changes" : "Add"}</button>`,
           {
             left: '<button class="ic" onclick="DR=null;E=null;SERIES_EDIT_SCOPE=null;history.length>1?history.back():go(\'summary\')" aria-label="Close">✕</button>',
@@ -4066,9 +4127,10 @@ ${typeField(DR.type)}
           allDay: $("#f-all-day")?.checked ?? DR.allDay ?? false,
           time: g("time") ?? DR.time,
           end: g("end") ?? DR.end,
-          loc: g("loc") ?? DR.loc,
+          lloc: g("loc") ?? DR.loc,
           type: g("type") ?? DR.type,
-          pri: +g("pri") || DR.pri,
+          color: g("color") ?? DR.color,
+          pri: g("pri") != null ? Number(g("pri")) : DR.pri,
           desc: g("desc") ?? DR.desc,
           repeatFrequency: g("repeat") === "none" ? null : g("repeat") ?? DR.repeatFrequency ?? null,
           repeatDays: [...document.querySelectorAll(".repeat-day:checked")].map((el) => +el.value),
