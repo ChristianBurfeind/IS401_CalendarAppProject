@@ -3543,8 +3543,13 @@ body:has(#auth) {
         );
       }
       
+function profileInitial() {
+  const [initial = "?"] = (S.prof.name || "").trim();
+  return esc(initial.toUpperCase());
+}
+
 function shell(title, body, o = {}) {
-  return `<div class="top">${o.left || '<a class="ic" href="#settings">☰</a>'}<h1>${title}</h1>${o.right || `<a class="ic" href="#profile">${S.photo ? `<img src="${S.photo}" alt="">` : "👤"}</a>`}</div>
+  return `<div class="top">${o.left || '<a class="ic" href="#settings">☰</a>'}<h1>${title}</h1>${o.right || `<a class="ic" href="#profile" aria-label="Open profile">${S.photo ? `<img src="${esc(S.photo)}" alt="">` : profileInitial()}</a>`}</div>
   <div class="main">${body}</div>
   ${o.fab ? '<button class="fab" onclick="newItem()" aria-label="Add task or event">+ Add</button>' : ""}
   ${o.nav ? `<nav class="nav">
@@ -5073,7 +5078,7 @@ async function loadDiscoveryEvents() {
       }
       function profilePictureButton() {
         return `<button type="button" class="av profile-photo-button" onclick="openPicture()" aria-label="Change profile picture or avatar" title="Change profile picture or avatar">
-          ${S.photo ? `<img src="${esc(S.photo)}" alt="Your profile picture">` : esc((S.prof.name || "?")[0].toUpperCase())}
+          ${S.photo ? `<img src="${esc(S.photo)}" alt="Your profile picture">` : profileInitial()}
           <span class="photo-edit-overlay" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 5 5-12 12-6 1 1-6Z"/><path d="m14 5 5 5"/></svg></span>
         </button>`;
       }
@@ -5529,7 +5534,7 @@ async function loadDiscoveryEvents() {
         $("#crop-editor").hidden = !cropState;
         $("#picture-preview").innerHTML = pictureDraft.photo
           ? `<img src="${esc(pictureDraft.photo)}" alt="Picture preview">`
-          : "👤";
+          : profileInitial();
         document
           .querySelectorAll("[data-avatar]")
           .forEach((b) =>
