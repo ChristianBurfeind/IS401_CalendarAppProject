@@ -2300,6 +2300,126 @@ body:has(#auth) {
           height: auto;
         }
       }
+      /* DISCOVERY PAGE */
+
+.discovery-page {
+  max-width: 850px;
+  margin: 0 auto;
+  padding-bottom: 35px;
+}
+
+.discovery-heading h2 {
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+
+.discovery-heading p {
+  color: var(--mut);
+  margin-bottom: 22px;
+}
+
+.discovery-search input {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid var(--line, #ddd);
+  border-radius: 12px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.discovery-filters {
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  margin: 22px 0;
+}
+
+.discovery-filter {
+  padding: 9px 15px;
+  border-radius: 20px;
+  background: #eef2f7;
+  color: #334155;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.discovery-filter.active {
+  background: #173b70;
+  color: white;
+}
+
+.discovery-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.discovery-section-heading h3 {
+  margin: 0;
+}
+
+.discovery-section-heading small {
+  color: var(--mut);
+}
+
+.discovery-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 16px;
+}
+
+.discovery-card {
+  background: var(--card, #fff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.04);
+}
+
+.discovery-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.discovery-category {
+  color: white;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+}
+
+.discovery-match {
+  font-size: 11px;
+  color: var(--mut);
+}
+
+.discovery-card h3 {
+  margin: 18px 0 12px;
+  font-size: 18px;
+}
+
+.discovery-card p {
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.discovery-description {
+  color: var(--mut);
+  line-height: 1.5;
+}
+
+.discovery-card .btn {
+  width: 100%;
+  margin-top: 15px;
+}
+
+.discovery-card .btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
     </style>
   </head>
   <body>
@@ -4335,13 +4455,154 @@ ${i.holiday ? '<p class="photo-hint">Automatically added U.S. federal holiday</p
           r();
         } finally { itemBusy.delete(id); }
       }
-      function disc() {
-        return shell(
-          "Discovery",
-          '<div class="empty-state" style="text-align:center;padding:36px 16px"><h2>No suggestions available</h2><p style="color:var(--mut)">Suggestions will appear here when they are ready.</p></div>',
-          { nav: "d" },
-        );
-      }
+      
+function disc() {
+  const eventCards = `
+    <div id="discovery-event-results">
+      <p>Loading BYU events...</p>
+    </div>
+  `;
+
+  return shell(
+    "Discovery",
+    `
+      <div class="discovery-page">
+
+        <div class="discovery-heading">
+          <h2>Find something worth doing.</h2>
+          <p>Explore real events happening at BYU.</p>
+        </div>
+
+        <div class="discovery-search">
+          <input
+            id="discovery-query"
+            type="text"
+            placeholder="✨ Ask AI: What's happening this weekend?"
+            disabled
+          >
+        </div>
+
+        <div class="discovery-filters">
+          <span class="discovery-filter active">All Events</span>
+          <span class="discovery-filter">Sports</span>
+          <span class="discovery-filter">Career</span>
+          <span class="discovery-filter">Social</span>
+        </div>
+
+        <div class="discovery-section-heading">
+          <h3>Upcoming BYU Events</h3>
+          <small>BYU Student Life</small>
+        </div>
+
+        <div class="discovery-cards">
+          ${eventCards}
+        </div>
+
+      </div>
+    `,
+    { nav: "d" }
+  );
+}
+
+
+// Fetch real BYU events from Supabase.
+async function loadDiscoveryEvents() {
+  const results = document.getElementById(
+    "discovery-event-results"
+  );
+
+  if (!results) return;
+
+  try {
+    const { data, error } = await sb
+      .from("discovered_events")
+      .select("*")
+      .gte("start_time", new Date().toISOString())
+      .order("start_time", { ascending: true })
+      .limit(50);
+
+    if (error) throw error;
+
+    // Stop if the user has navigated away.
+    if (!results.isConnected) return;
+
+    if (!data || data.length === 0) {
+      results.innerHTML = `
+        <p>No upcoming BYU events are available.</p>
+      `;
+      return;
+    }
+
+    const eventCards = data.map((event) => {
+      const start = new Date(event.start_time);
+
+      const date = start.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        timeZone: "America/Denver"
+      });
+
+      const time = start.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "America/Denver"
+      });
+
+      const category = event.category || "Student Life";
+
+      return `
+        <div class="discovery-card">
+          <div class="discovery-card-top">
+            <span class="discovery-category"
+              style="background:#2563eb">
+              ${esc(category)}
+            </span>
+            <span class="discovery-match">
+              ✨ BYU Event
+            </span>
+          </div>
+
+          <h3>${esc(event.title)}</h3>
+
+          <p>📅 ${esc(date)} · ${esc(time)}</p>
+          <p>📍 ${esc(event.location || "BYU Campus")}</p>
+
+          <p class="discovery-description">
+            ${esc(event.description || "View event details for more information.")}
+          </p>
+
+          ${event.source_url ? `
+            <a
+              class="btn"
+              href="${esc(event.source_url)}"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View Event Details
+            </a>
+          ` : ""}
+
+          <button class="btn" disabled>
+            Add to Calendar — Coming Soon
+          </button>
+        </div>
+      `;
+    }).join("");
+
+    results.innerHTML = eventCards;
+
+  } catch (error) {
+    console.error("Error loading Discovery events:", error);
+
+    if (results.isConnected) {
+      results.innerHTML = `
+        <p>Unable to load events. Please try again.</p>
+      `;
+    }
+  }
+}
+
       const tgl = (k) =>
         `<button class="tog ${S.set[k] ? "on" : ""}" role="switch" aria-checked="${!!S.set[k]}" onclick="setS('${k}',!S.set.${k})"></button>`;
       const sel = (k, o) =>
@@ -5604,33 +5865,53 @@ ${i.holiday ? '<p class="photo-hint">Automatically added U.S. federal holiday</p
           $("#picture-error").textContent = nice(e);
         }
       }
-      function r() {
-        let h = (location.hash || "#login").slice(1);
-        if (!S.user && !(h === "confirm-email" && pendingEmail)) h = "login";
-        if (h == "login" && S.user) h = "summary";
-        const f =
-          {
-            login,
-            "confirm-email": confirmEmail,
-            summary,
-            day,
-            week,
-            month,
-            todo,
-            add: addf,
-            discovery: disc,
-            settings: sett,
-            profile: prof,
-          }[h] || summary;
-        document.documentElement.dataset.theme = S.set.theme;
-        $("#app").dataset.page = h;
-        $("#app").innerHTML = f();
-        const hasMobileNavigation = !!$("#app > .nav");
-        $("#app").classList.toggle("mobile-dashboard", hasMobileNavigation);
-        document.body.classList.toggle("mobile-dashboard", hasMobileNavigation);
-        updateMobileViewport();
-        updateBirthdayUI();
-      }
+      
+function r() {
+  let h = (location.hash || "#login").slice(1);
+
+  if (!S.user && !(h === "confirm-email" && pendingEmail)) h = "login";
+  if (h == "login" && S.user) h = "summary";
+
+  const f =
+    {
+      login,
+      "confirm-email": confirmEmail,
+      summary,
+      day,
+      week,
+      month,
+      todo,
+      add: addf,
+      discovery: disc,
+      settings: sett,
+      profile: prof,
+    }[h] || summary;
+
+  document.documentElement.dataset.theme = S.set.theme;
+  $("#app").dataset.page = h;
+  $("#app").innerHTML = f();
+
+  const hasMobileNavigation = !!$("#app > .nav");
+
+  $("#app").classList.toggle(
+    "mobile-dashboard",
+    hasMobileNavigation
+  );
+
+  document.body.classList.toggle(
+    "mobile-dashboard",
+    hasMobileNavigation
+  );
+
+  updateMobileViewport();
+  updateBirthdayUI();
+
+  // NEW: Load real BYU events when Discovery opens.
+  if (h === "discovery") {
+    loadDiscoveryEvents();
+  }
+}
+
       // Safari's visible area changes when its toolbars expand or collapse.
       // Keep the dashboard within that area; only its content panel scrolls.
       function updateMobileViewport() {
