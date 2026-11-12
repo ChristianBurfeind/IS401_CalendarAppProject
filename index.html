@@ -3755,7 +3755,7 @@ ${!useSB ? "<p>Live login requires your Supabase URL and public key.</p>" : ""}<
         input.focus({ preventScroll: true });
         input.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
       }
-      function chk() {
+      function chk(clearMessage = true) {
         if (authBusy) return;
         const button = $("#go");
         if (LM !== "up") { button.disabled = !authFieldsValid(); return; }
@@ -3765,7 +3765,7 @@ ${!useSB ? "<p>Live login requires your Supabase URL and public key.</p>" : ""}<
         document.querySelectorAll("#auth-form .signup-invalid").forEach(input => {
           if (!errors.some(error => error.id === input.id)) clearSignupError(input);
         });
-        if (!errors.length) $("#er").textContent = "";
+        if (clearMessage && !errors.length) $("#er").textContent = "";
       }
       async function auth() {
         if (authBusy) return;
@@ -3790,7 +3790,10 @@ ${!useSB ? "<p>Live login requires your Supabase URL and public key.</p>" : ""}<
           return;
         }
         authBusy = true;
+        const buttonLabel = btn.textContent;
         btn.disabled = true;
+        btn.textContent = LM === "up" ? "Creating account…" : "Logging in…";
+        er.textContent = "";
         try {
           choosePersistence($("#st").checked);
           const result =
@@ -3833,11 +3836,13 @@ ${!useSB ? "<p>Live login requires your Supabase URL and public key.</p>" : ""}<
           r();
         } catch (e) {
           er.textContent = nice(e);
-          btn.disabled = false;
           S = init();
         } finally {
           authBusy = false;
-          if (btn.isConnected) { btn.disabled = false; chk(); }
+          if (btn.isConnected) {
+            btn.textContent = buttonLabel;
+            chk(false);
+          }
         }
       }
       function summary() {
