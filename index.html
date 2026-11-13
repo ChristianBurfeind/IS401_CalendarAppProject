@@ -5637,7 +5637,7 @@ function loadDiscoveryInterests() {
         }).join("");
         const body = `${profilePictureButton()}<p class="photo-hint">Click your picture to change it</p>
           ${PE ? `<form onsubmit="event.preventDefault();saveP()">${fields}<p id="profile-error" class="err" role="status" aria-live="polite"></p><button id="save-profile" class="btn" type="submit">Save changes</button><button class="btn alt" type="button" onclick="PE=false;profileInterestDraft=[];r()">Cancel</button></form>` : fields}
-          ${!PE ? `${profileConnections()}<button class="btn alt" onclick="logout()">Log out</button>` : ""}
+          ${!PE ? `<button class="btn alt" onclick="logout()">Log out</button>` : ""}
           <section class="account-danger"><h2>Delete account</h2><p>Permanently remove your account, profile, tasks, events, settings, and uploaded profile pictures.</p><button type="button" class="btn delete-account-button" onclick="openDeleteAccount()">Delete my account</button></section>`;
         return shell("Profile", body, {
           left: '<button class="ic" onclick="PE=false;profileInterestDraft=[];go(S.set.view)" aria-label="Back">‹</button>',
