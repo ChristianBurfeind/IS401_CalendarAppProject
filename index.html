@@ -2444,6 +2444,59 @@ body:has(#auth) {
       width: 100%;
       height: 100%;
     }
+
+        #app[data-page="todo"] .seg button {
+      flex: 1;
+      padding: 8px 12px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--mut);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #app[data-page="todo"] .seg button.on {
+      background: var(--pri);
+      color: var(--on);
+    }
+
+    .todo-week-day {
+      margin: 16px 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .todo-week-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .todo-week-heading button {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--pri);
+      font: inherit;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .todo-week-heading span,
+    .todo-week-empty {
+      color: var(--mut);
+      font-size: 12px;
+    }
+
+    .todo-week-empty {
+      margin-bottom: 0;
+    }
     </style>
   </head>
   <body>
@@ -4196,26 +4249,144 @@ ${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`
           { nav: "c", fab: 1 },
         );
       }
-      function todo() {
-        const ts = tasks(D);
-        return shell(
-          "To-Do",
-          `<div class="nav2"><button onclick="D=ad(D,-1);r()" aria-label="Previous day">‹</button><span>${L(D, { weekday: "short", month: "short", day: "numeric" })}</span><button onclick="D=ad(D,1);r()" aria-label="Next day">›</button></div>` +
-            [...new Set(ts.map(t => ty(t.type)))]
-              .map(
-                (k) =>
-                  `<h2>${esc(typeInfo(k)[0])}</h2>${ts
-                    .filter((t) => t.type == k)
-                    .map(trow)
-                    .join("")}`,
-              )
-              .join("") +
-            (ts.length
-              ? ""
-              : '<p style="text-align:center;color:var(--mut)">No tasks for this day. Tap + to add one.</p>'),
-          { nav: "t", fab: 1 },
-        );
-      }
+      let todoView = "day";
+
+function setTodoView(view) {
+  todoView = view;
+  r();
+}
+
+  function todo() {
+    const toggle = `
+      <div class="seg" role="group" aria-label="To-Do view">
+        <button
+          type="button"
+          class="${todoView === "day" ? "on" : ""}"
+          aria-pressed="${todoView === "day"}"
+          onclick="setTodoView('day')"
+        >Day</button>
+        <button
+          type="button"
+          class="${todoView === "week" ? "on" : ""}"
+          aria-pressed="${todoView === "week"}"
+          onclick="setTodoView('week')"
+        >Week</button>
+      </div>
+    `;
+
+    const taskGroups = (list) =>
+      [...new Set(list.map((t) => ty(t.type)))]
+        .map(
+          (type) => `
+            <h2>${esc(typeInfo(type)[0])}</h2>
+            ${list
+              .filter((t) => ty(t.type) === type)
+              .map(trow)
+              .join("")}
+          `,
+        )
+        .join("");
+
+    if (todoView === "day") {
+      const ts = tasks(D);
+
+      return shell(
+        "To-Do",
+        toggle +
+          `
+          <div class="nav2">
+            <button onclick="D=ad(D,-1);r()"
+              aria-label="Previous day">‹</button>
+            <span>
+              ${L(D, {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+            <button onclick="D=ad(D,1);r()"
+              aria-label="Next day">›</button>
+          </div>
+          ` +
+          taskGroups(ts) +
+          (ts.length
+            ? ""
+            : `<p style="text-align:center;color:var(--mut)">
+                No tasks for this day. Tap + to add one.
+              </p>`),
+        { nav: "t", fab: 1 },
+      );
+    }
+
+    // Follow the Monday/Sunday preference from Settings.
+    const weekday = new Date(D + "T12:00:00").getDay();
+    const weekStartsOn = Number(S.set.wk) === 0 ? 0 : 1;
+    const offset = (weekday - weekStartsOn + 7) % 7;
+    const weekStart = ad(D, -offset);
+    const weekEnd = ad(weekStart, 6);
+
+    const days = Array.from({ length: 7 }, (_, i) =>
+      ad(weekStart, i),
+    );
+
+    return shell(
+      "To-Do",
+      toggle +
+        `
+        <div class="nav2">
+          <button onclick="D=ad(D,-7);r()"
+            aria-label="Previous week">‹</button>
+          <span>
+            ${L(weekStart, { month: "short", day: "numeric" })}
+            –
+            ${L(weekEnd, { month: "short", day: "numeric" })}
+          </span>
+          <button onclick="D=ad(D,7);r()"
+            aria-label="Next week">›</button>
+        </div>
+        ` +
+        days
+          .map((date) => {
+            const list = tasks(date);
+
+            return `
+              <section
+                class="todo-week-day"
+                aria-label="${L(date, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                })}"
+              >
+                <div class="todo-week-heading">
+                  <button
+                    type="button"
+                    onclick="D='${date}';setTodoView('day')"
+                  >
+                    ${L(date, {
+                      weekday: "long",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                    ${date === TODAY ? " · Today" : ""}
+                  </button>
+                  <span>
+                    ${list.filter((t) => !t.done).length} remaining
+                  </span>
+                </div>
+
+                ${
+                  list.length
+                    ? taskGroups(list)
+                    : '<p class="todo-week-empty">No tasks.</p>'
+                }
+              </section>
+            `;
+          })
+          .join(""),
+      { nav: "t", fab: 1 },
+    );
+  }
       const val = (k, d) => (DR ? DR[k] : d);
       function addf() {
         const it = E ? calendarItem(E) : null;
