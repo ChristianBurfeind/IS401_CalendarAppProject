@@ -4485,18 +4485,32 @@ function disc() {
         </div>
 
         
+
 <div class="discovery-search">
   <input
     id="discovery-query"
     type="text"
     placeholder="✨ Ask AI: What's happening this weekend?"
     onkeydown="if(event.key === 'Enter') askDiscoveryAI()"
-  >
+  />
 
-  <button class="btn" onclick="askDiscoveryAI()">
+  <button
+    class="btn"
+    type="button"
+    onclick="askDiscoveryAI()"
+  >
     ✨ Ask AI
   </button>
+
+  <button
+    class="btn"
+    type="button"
+    onclick="recommendForMe()"
+  >
+    ✨ Recommend for Me
+  </button>
 </div>
+
 
 <div id="discovery-ai-results"></div>
 
@@ -4734,6 +4748,16 @@ async function addDiscoveryToCalendar(eventId) {
   }
 }
 
+function recommendForMe() {
+  const input = document.getElementById("discovery-query");
+
+  if (!input) return;
+
+  input.value = "Recommend upcoming BYU events based on my interests.";
+
+  askDiscoveryAI();
+}
+
 async function askDiscoveryAI() {
   const input = document.getElementById("discovery-query");
   const results = document.getElementById("discovery-ai-results");
@@ -4741,6 +4765,11 @@ async function askDiscoveryAI() {
   if (!input || !results) return;
 
   const question = input.value.trim();
+
+const interests = JSON.parse(
+  localStorage.getItem("discovery-interests-" + S.uid) || "[]"
+);
+
 
   if (!question) {
     results.textContent = "Please enter a question.";
@@ -4750,12 +4779,17 @@ async function askDiscoveryAI() {
   results.textContent = "✨ Finding events for you...";
 
   try {
-    const { data, error } = await sb.functions.invoke(
-      "recommend_events",
-      {
-        body: { query: question }
-      }
-    );
+    
+const { data, error } = await sb.functions.invoke(
+  "recommend_events",
+  {
+    body: {
+      query: question,
+      interests: interests
+    }
+  }
+);
+
 
     
 if (error) {
@@ -4886,6 +4920,48 @@ return `
             ["plum", "Plum"],
           ])}</div>
           <div class="sw">In-calendar suggestions ${tgl("sug")}</div>
+
+<h2>✨ AI Discovery Preferences</h2>
+
+<p style="color:var(--mut);font-size:13px">
+  Choose your interests to get personalized BYU event
+  recommendations.
+</p>
+
+<div id="discovery-interests" style="display:grid;gap:10px;margin:15px 0">
+
+  <label><input type="checkbox" value="Sports"> Sports</label>
+
+  <label><input type="checkbox" value="Music & Concerts"> Music & Concerts</label>
+
+  <label><input type="checkbox" value="Social Events"> Social Events</label>
+
+  <label><input type="checkbox" value="Career & Networking"> Career & Networking</label>
+
+  <label><input type="checkbox" value="Outdoors"> Outdoors</label>
+
+  <label><input type="checkbox" value="Arts & Culture"> Arts & Culture</label>
+
+  <label><input type="checkbox" value="Service"> Service</label>
+
+  <label><input type="checkbox" value="Academic Events"> Academic Events</label>
+
+</div>
+
+<button
+  class="btn"
+  type="button"
+  onclick="saveDiscoveryInterests()"
+>
+  Save My Interests
+</button>
+
+<p id="discovery-interests-status"
+   role="status"
+   aria-live="polite"
+   style="font-size:13px">
+</p>
+
           <p style="color:var(--mut);font-size:12px">
             Reminders: homework due within 24 hours and social events
             within 4 hours show on your Summary page.
@@ -5001,6 +5077,49 @@ return `
           },
         );
       }
+
+function saveDiscoveryInterests() {
+  const selected = Array.from(
+    document.querySelectorAll(
+      "#discovery-interests input:checked"
+    )
+  ).map(input => input.value);
+
+  if (!S.uid) {
+    toast("Please log in first.");
+    return;
+  }
+
+  localStorage.setItem(
+    "discovery-interests-" + S.uid,
+    JSON.stringify(selected)
+  );
+
+  const status = document.getElementById(
+    "discovery-interests-status"
+  );
+
+  if (status) {
+    status.textContent = "✓ Your interests have been saved!";
+  }
+
+  toast("Discovery interests saved!");
+}
+
+function loadDiscoveryInterests() {
+  if (!S.uid) return;
+
+  const saved = JSON.parse(
+    localStorage.getItem("discovery-interests-" + S.uid) || "[]"
+  );
+
+  document.querySelectorAll(
+    "#discovery-interests input"
+  ).forEach(input => {
+    input.checked = saved.includes(input.value);
+  });
+}
+
 
       let calendarRefreshBusy = false;
 
@@ -6156,10 +6275,19 @@ function r() {
   updateBirthdayUI();
 
   // NEW: Load real BYU events when Discovery opens.
+  
+  // Load real BYU events when Discovery opens.
   if (h === "discovery") {
     loadDiscoveryEvents();
   }
+
+  // Restore saved AI interests when Settings opens.
+  if (h === "settings") {
+    loadDiscoveryInterests();
+  }
 }
+
+
 
       // Safari's visible area changes when its toolbars expand or collapse.
       // Keep the dashboard within that area; only its content panel scrolls.
