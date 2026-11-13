@@ -4484,14 +4484,22 @@ function disc() {
           <p>Explore real events happening at BYU.</p>
         </div>
 
-        <div class="discovery-search">
-          <input
-            id="discovery-query"
-            type="text"
-            placeholder="✨ Ask AI: What's happening this weekend?"
-            disabled
-          >
-        </div>
+        
+<div class="discovery-search">
+  <input
+    id="discovery-query"
+    type="text"
+    placeholder="✨ Ask AI: What's happening this weekend?"
+    onkeydown="if(event.key === 'Enter') askDiscoveryAI()"
+  >
+
+  <button class="btn" onclick="askDiscoveryAI()">
+    ✨ Ask AI
+  </button>
+</div>
+
+<div id="discovery-ai-results"></div>
+
 
         <div class="discovery-filters">
           <span class="discovery-filter active">All Events</span>
@@ -4594,9 +4602,14 @@ async function loadDiscoveryEvents() {
             </a>
           ` : ""}
 
-          <button class="btn" disabled>
-            Add to Calendar — Coming Soon
-          </button>
+          
+            <button
+              class="btn"
+              onclick="addDiscoveryToCalendar('${event.id}')"
+              >
+              + Add to Calendar
+            </button>
+
         </div>
       `;
     }).join("");
@@ -4613,6 +4626,231 @@ async function loadDiscoveryEvents() {
     }
   }
 }
+
+const discoverySaving = new Set();
+
+async function addDiscoveryToCalendar(eventId) {
+  if (discoverySaving.has(String(eventId))) return;
+
+  discoverySaving.add(String(eventId));
+
+  try {
+    if (!S.uid) {
+      toast("Please log in first.");
+      return;
+    }
+
+    const { data: event, error } = await sb
+      .from("discovered_events")
+      .select("*")
+      .eq("id", eventId)
+      .single();
+
+    if (error) throw error;
+
+    const start = new Date(event.start_time);
+    const end = event.end_time
+      ? new Date(event.end_time)
+      : new Date(start.getTime() + 60 * 60 * 1000);
+
+    if (isNaN(start.getTime())) {
+      throw new Error("This event has an invalid date.");
+    }
+
+    const localParts = (date) => {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Denver",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      }).formatToParts(date);
+
+      const p = {};
+      parts.forEach(part => {
+        p[part.type] = part.value;
+      });
+
+      return {
+        date: p.year + "-" + p.month + "-" + p.day,
+        time: p.hour + ":" + p.minute
+      };
+    };
+
+    const begins = localParts(start);
+    const finishes = localParts(end);
+
+    if (finishes.date !== begins.date) {
+      toast("This event crosses midnight. Add it manually for now.");
+      return;
+    }
+
+    const alreadySaved = S.items.some(item =>
+      item.kind !== "task" &&
+      item.title === event.title &&
+      item.date === begins.date &&
+      item.time === begins.time
+    );
+
+    if (alreadySaved) {
+      toast("This event is already on your calendar.");
+      return;
+    }
+
+    const newEvent = {
+      id: uid(),
+      kind: "event",
+      title: event.title,
+      date: begins.date,
+      time: begins.time,
+      end: finishes.time,
+      allDay: false,
+      loc: event.location || "",
+      type: "other",
+      pri: 0,
+      desc: event.description || "",
+      done: false
+    };
+
+    const saved = await dbItem(newEvent);
+
+    if (!saved) {
+      toast("Could not save event. Please try again.");
+      return;
+    }
+
+    S.items.push(newEvent);
+    save();
+
+    toast("Event added to your calendar!");
+
+  } catch (error) {
+    console.error("Discovery calendar error:", error);
+    toast("Unable to add event to calendar.");
+  } finally {
+    discoverySaving.delete(String(eventId));
+  }
+}
+
+async function askDiscoveryAI() {
+  const input = document.getElementById("discovery-query");
+  const results = document.getElementById("discovery-ai-results");
+
+  if (!input || !results) return;
+
+  const question = input.value.trim();
+
+  if (!question) {
+    results.textContent = "Please enter a question.";
+    return;
+  }
+
+  results.textContent = "✨ Finding events for you...";
+
+  try {
+    const { data, error } = await sb.functions.invoke(
+      "recommend_events",
+      {
+        body: { query: question }
+      }
+    );
+
+    
+if (error) {
+  console.error("Supabase function error:", error);
+
+  if (error.context) {
+    try {
+      const responseBody = await error.context.clone().text();
+      console.error("Function response:", responseBody);
+      console.error("HTTP status:", error.context.status);
+    } catch (e) {
+      console.error("Could not read error response:", e);
+    }
+  }
+
+  throw error;
+}
+
+
+    if (!results.isConnected) return;
+
+    const recommendations = data.recommendations || [];
+
+    if (recommendations.length === 0) {
+      results.innerHTML = `
+        <div class="discovery-card">
+          <p>${esc(data.message || "No matching events found.")}</p>
+        </div>
+      `;
+      return;
+    }
+
+    results.innerHTML = `
+      <div class="discovery-section-heading">
+        <h3>✨ AI Recommendations</h3>
+      </div>
+
+      ${recommendations.map((item) => {
+        const event = item.event;
+
+        const date = new Date(event.start_time)
+          .toLocaleString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            timeZone: "America/Denver"
+          });
+
+        
+return `
+  <div class="discovery-card">
+    <h3>${esc(event.title)}</h3>
+
+    <p>📅 ${esc(date)}</p>
+    <p>📍 ${esc(event.location || "BYU Campus")}</p>
+
+    <p class="discovery-description">
+      ✨ ${esc(item.reason)}
+    </p>
+
+    ${event.source_url ? `
+      <a
+        class="btn"
+        href="${esc(event.source_url)}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        View Event
+      </a>
+    ` : ""}
+
+    <button
+      class="btn"
+      onclick="addDiscoveryToCalendar('${event.id}')"
+    >
+      + Add to Calendar
+   
+    </button>
+  </div>
+`;
+      }).join("")}
+    `;
+
+  } catch (error) {
+    console.error("AI Discovery error:", error);
+
+    if (results.isConnected) {
+      results.textContent =
+        "Unable to get AI recommendations. Check the browser console.";
+    }
+  }
+}
+
 
       const tgl = (k) =>
         `<button class="tog ${S.set[k] ? "on" : ""}" role="switch" aria-checked="${!!S.set[k]}" onclick="setS('${k}',!S.set.${k})"></button>`;
