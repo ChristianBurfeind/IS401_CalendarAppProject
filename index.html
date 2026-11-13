@@ -2420,6 +2420,30 @@ body:has(#auth) {
   opacity: .55;
   cursor: not-allowed;
 }
+
+ .calendar-refresh-button {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .calendar-brand-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 38px;
+      width: 38px;
+      height: 38px;
+      padding: 6px;
+      border-radius: 9px;
+      background: #fff;
+    }
+
+    .calendar-brand-icon svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
     </style>
   </head>
   <body>
@@ -5048,22 +5072,28 @@ return `
           ></p>
 
           <button
-            class="btn"
+            class="btn calendar-refresh-button"
             type="button"
             data-calendar-refresh
             onclick="refreshSchoolCalendar('canvas')"
-          >
-            Refresh Canvas
+            >
+            <span class="calendar-brand-icon" aria-hidden="true">
+              ${CONNECTION_ICONS.canvas}
+            </span>
+            <span>Refresh Canvas</span>
           </button>
 
           <button
-            class="btn"
+            class="btn calendar-refresh-button"
             type="button"
             data-calendar-refresh
             onclick="refreshSchoolCalendar('learning_suite')"
-          >
-            Refresh Learning Suite
-          </button>
+            >
+            <span class="calendar-brand-icon" aria-hidden="true">
+              ${CONNECTION_ICONS.learningSuite}
+            </span>
+            <span>Refresh Learning Suite</span>
+            </button>
 
           <p
             id="calendar-import-status"
