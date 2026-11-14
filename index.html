@@ -6,7 +6,9 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>The Daily Blend</title>
+    <title>The Daily Blend | Your day, beautifully in balance</title>
+    <meta name="description" content="A student planner for your classes, assignments, events, and everything in between. Bring Canvas and Learning Suite together in The Daily Blend.">
+    <meta name="theme-color" content="#2845d6">
     <style>
       :root {
         box-sizing: border-box;
@@ -2497,11 +2499,266 @@ body:has(#auth) {
     .todo-week-empty {
       margin-bottom: 0;
     }
+
+/* =====================================================================
+   COLORBLOCK STUDIO — final presentation layer
+   Existing layout utilities above remain for calendar geometry and dialogs.
+   1. Tokens  2. Shell  3. Components  4. Summary  5. Auth  6. Responsive
+   No external fonts, decorative images, or animation libraries are required.
+   ===================================================================== */
+:root, [data-theme="royal"] {
+  --bg:#f7f5f0; --card:#fffefa; --ink:#172039; --mut:#535b70;
+  --pri:#2845d6; --on:#ffffff; --acc:#eceaff; --line:#cdcdd5;
+  --urg:#a32335; --std:#805000; --flx:#24613e;
+  --cb-cobalt:#2845d6; --cb-lilac:#ddc9f4; --cb-orange:#ffab63;
+  --cb-shadow:0 4px 0 rgba(23,32,57,.045);
+}
+[data-theme="dark"] {
+  --bg:#161a27; --card:#202638; --ink:#f5f2eb; --mut:#bbc2d5;
+  --pri:#bac6ff; --on:#152044; --acc:#343452; --line:#677089;
+  --urg:#ffb3bc; --std:#ffd089; --flx:#a4dfb5;
+  --cb-lilac:#51436b; --cb-orange:#a94e14;
+}
+[data-theme="forest"] {--pri:#235d48;--on:#fff;--acc:#e4efe7;--cb-cobalt:#235d48;}
+[data-theme="plum"] {--pri:#713a83;--on:#fff;--acc:#f0e6f5;--cb-cobalt:#713a83;}
+html {color-scheme:light;scroll-behavior:auto;}
+html[data-theme="dark"] {color-scheme:dark;}
+body {font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.55;background:var(--bg);color:var(--ink);}
+button,input,select,textarea {font:inherit;}
+button,a,input,select,textarea,summary,[tabindex] {scroll-margin:24px;}
+:focus-visible {outline:3px solid var(--pri)!important;outline-offset:4px;}
+button:focus-visible {box-shadow:0 0 0 2px var(--card);}
+button:disabled {cursor:wait;}
+input[type="checkbox"] {accent-color:var(--pri);width:22px;height:22px;min-width:22px;cursor:pointer;}
+.cb-skip {position:fixed;top:12px;left:12px;z-index:1000;transform:translateY(-180%);padding:12px 20px;background:var(--ink);color:var(--bg);border-radius:10px;font-weight:700;}
+.cb-skip:focus {transform:none;}
+
+/* App shell: one content scroller, persistent navigation. */
+#app {height:100dvh;background:var(--bg);grid-template-columns:232px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"nav top" "nav main";}
+#app > .top {background:var(--bg);border:0;border-bottom:1px solid var(--line);display:flex;min-height:118px;padding:26px 36px;gap:20px;}
+.top .cb-page-heading {min-width:0;flex:1;}
+.top h1 {font-family:inherit;font-size:clamp(23px,2.3vw,34px);font-weight:800;letter-spacing:-1.1px;color:var(--ink);white-space:normal;line-height:1.18;}
+.top h1::after {display:none;}
+.cb-eyebrow {font-size:11px;font-weight:800;letter-spacing:.13em;line-height:1.5;margin:0 0 7px;text-transform:uppercase;}
+.cb-page-heading > .cb-eyebrow {color:var(--mut);}
+.cb-subtitle {font-size:13px;color:var(--mut);margin:6px 0 0;}
+.cb-top-actions {display:flex;align-items:center;gap:10px;}
+.top .ic {order:initial!important;}
+.ic {width:44px;height:44px;min-width:44px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);}
+.ic svg,.fab svg {width:20px;height:20px;}
+.cb-profile-link {background:var(--cb-lilac);color:var(--ink);}
+#app > .nav {position:relative;inset:auto;padding:30px 18px 20px;gap:6px;background:var(--card);border-right:1px solid var(--line);box-shadow:none;min-height:0;overflow:auto;}
+.nav::before,.nav::after {display:none!important;}
+.cb-brand {display:flex;gap:10px;align-items:flex-start;padding:0 4px 36px!important;color:var(--ink)!important;background:none!important;border-radius:0!important;box-shadow:none!important;transform:none!important;}
+.cb-brand > span:last-child {font-size:22px;font-weight:900;letter-spacing:-1px;line-height:1.02;}
+.cb-brand-caption {display:block;font-size:11px;font-weight:500;letter-spacing:0;margin-top:10px;line-height:1.5;color:var(--mut);}
+.cb-brand-mark {width:28px;height:30px;flex:0 0 28px;background:var(--cb-cobalt);border-radius:0 16px 0 16px;position:relative;}
+.cb-brand-mark::after {content:"";position:absolute;width:12px;height:12px;background:var(--cb-orange);border-radius:50%;bottom:-5px;left:-4px;}
+.nav a.cb-nav-link {display:flex;align-items:center;gap:12px;padding:12px 14px;min-height:48px;border-radius:11px;font-size:14px;font-weight:650;color:var(--ink);background:transparent;box-shadow:none;transform:none;}
+.cb-nav-link svg {width:20px;height:20px;flex:0 0 20px;}
+.nav a.cb-nav-link.on {background:var(--ink);color:var(--card);}
+.nav a.cb-nav-link:hover:not(.on) {background:var(--acc);transform:none;}
+.cb-sidebar-note {margin-top:auto;padding:26px 14px 22px;position:relative;overflow:hidden;}
+.cb-sidebar-note strong {display:block;position:relative;font-size:27px;line-height:1.12;letter-spacing:-1px;}
+.cb-sidebar-note > span:last-child {display:block;position:relative;font-size:12px;color:var(--mut);margin-top:12px;max-width:145px;}
+.cb-note-shape {position:absolute;width:75px;height:75px;border-radius:50%;background:var(--cb-lilac);top:20px;right:0;}
+.nav a.cb-sidebar-profile {display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);border-radius:0;padding:18px 4px 0;color:var(--ink);background:none;box-shadow:none;transform:none;font-size:13px;}
+.cb-sidebar-profile small {display:block;color:var(--mut);font-weight:400;font-size:11px;}
+.cb-avatar {display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--acc);flex:0 0 34px;}
+#app > .main {background:var(--bg);padding:30px 36px 120px;min-width:0;}
+#app[data-page="summary"] .main,#app[data-page="todo"] .main,#app[data-page="discovery"] .main {padding-inline:36px;}
+#app[data-page="settings"] .main,#app[data-page="add"] .main {padding-inline:max(28px,calc((100% - 800px)/2));}
+#app[data-page="profile"] {grid-template-columns:1fr;grid-template-areas:"top" "main";}
+#app[data-page="profile"] .main {padding-inline:max(28px,calc((100% - 800px)/2));}
+.fab {display:flex;align-items:center;gap:8px;background:var(--cb-orange);color:#172039;border:1px solid #172039;border-radius:14px;min-height:50px;box-shadow:3px 4px 0 #172039;right:30px;bottom:24px;font-weight:750;}
+
+/* Shared controls, cards, forms, and dialogs. */
+h2 {font-family:inherit;font-size:13px;color:var(--ink);font-weight:800;letter-spacing:.045em;}
+label {font-size:12px;color:var(--ink);letter-spacing:.035em;margin-top:16px;}
+input,select,textarea {min-height:46px;border:1px solid #888fa0;border-radius:10px;background:var(--card);color:var(--ink);padding:11px 12px;}
+input::placeholder,textarea::placeholder {color:var(--mut);opacity:1;}
+input[type="checkbox"],input[type="range"],input[type="color"] {min-height:0;}
+input[type="color"] {min-height:44px;}
+textarea {min-height:120px;}
+.btn {background:var(--pri);color:var(--on);border:1px solid transparent;border-radius:11px;min-height:46px;font-weight:700;padding:12px 16px;box-shadow:none;}
+.btn:hover:not(:disabled) {filter:brightness(.94);}
+.btn.alt {background:var(--acc);color:var(--ink);border-color:var(--line);}
+.btn.del,.delete-account-button {background:#9e2033;color:#fff;}
+.seg {background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;max-width:360px;margin:0 0 20px;}
+.seg a,.seg button {min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;}
+.seg a.on,#app[data-page="todo"] .seg button.on {background:var(--ink);color:var(--card);}
+.nav2 {border:1px solid var(--line);border-radius:12px;background:var(--card);padding:12px 16px;font-size:15px;color:var(--ink);gap:10px;margin-bottom:16px;}
+.nav2 button {min-width:44px;min-height:44px;background:var(--acc);color:var(--ink);border-radius:9px;}
+.row {padding:12px;background:var(--card);border:1px solid var(--line);border-radius:10px;gap:10px;margin-bottom:8px;color:var(--ink);}
+.row small {color:var(--mut);}
+.row .t {overflow-wrap:anywhere;}
+.done .t {opacity:1;color:var(--mut);}
+.done {background:var(--bg);}
+.p1 {color:var(--urg);}.p2 {color:var(--std);}.p3 {color:var(--flx);}
+.cb-priority {font-size:11px;font-weight:700;flex-shrink:0;}
+.cb-item-title {border:0;background:none;font:inherit;color:inherit;text-align:left;padding:4px 0;cursor:pointer;min-height:44px;}
+.cb-item-title small {display:block;font-size:11px;}
+.cb-event-row {width:100%;text-align:left;cursor:pointer;font:inherit;min-height:64px;}
+.cb-event-time {font-size:12px;font-weight:800;min-width:66px;color:var(--pri);}
+.sw {background:var(--card);padding:16px;margin-bottom:8px;border:1px solid var(--line);border-radius:12px;gap:14px;font-weight:600;}
+.sw select {width:150px;}
+.tog {width:48px;height:30px;min-height:30px;border:1px solid #747c90;background:#747c90;}
+.tog::after {top:4px;left:4px;}.tog.on::after {left:24px;}.tog.on {background:var(--pri);border-color:var(--pri);}
+.kv {padding:17px 12px;border-color:var(--line);background:var(--card);gap:14px;}
+.kv span {color:var(--mut);}.kv b {overflow-wrap:anywhere;}
+.av {background:var(--cb-lilac);color:var(--ink);border:1px solid var(--line);}
+.account-danger {border:1px solid var(--line);border-top:3px solid var(--urg);border-radius:12px;padding:20px;background:var(--card);margin-top:30px;}
+details {background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 14px;}
+summary {min-height:44px;align-content:center;cursor:pointer;font-weight:650;color:var(--ink);}
+details li {margin-bottom:8px;}
+#discovery-interests {grid-template-columns:repeat(2,minmax(0,1fr));}
+#discovery-interests label {display:flex;align-items:center;gap:10px;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0;text-transform:none;letter-spacing:0;}
+.calendar-refresh-button {display:flex;align-items:center;gap:12px;text-align:left;}
+.calendar-brand-icon {background:#fff;border:1px solid #d6d6df;}
+.sheet,dialog {background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:20px;box-shadow:0 20px 80px #17203930;}
+.sheet {max-height:90dvh;overflow:auto;}
+.sheet h3 {font-size:23px;letter-spacing:-.6px;}
+#toast {background:var(--ink);color:var(--card);border-radius:10px;white-space:normal;max-width:90vw;}
+.todo-week-day {background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;}
+.todo-week-heading button {min-height:44px;color:var(--ink);}
+.discovery-page {max-width:none;}
+.discovery-heading h2 {text-transform:none;letter-spacing:-.7px;color:var(--ink);font-size:30px;}
+.discovery-filter {background:var(--card);color:var(--ink);border:1px solid var(--line);min-height:44px;}
+.discovery-filter.active {background:var(--ink);color:var(--card);}
+.discovery-event-card,.discovery-card,.campus-panel {background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:var(--cb-shadow);border-radius:16px;}
+.discovery-event-card h3,.discovery-card h3,.campus-panel h3 {color:var(--ink);}
+.campus-hero {background:var(--cb-lilac);color:var(--ink);border:0;border-radius:14px;}
+.campus-hero strong {font-family:inherit;}
+.campus-photo {display:none;}
+.mo,.campus-calendar .mo {background:var(--card);border-color:var(--line);border-radius:14px;padding:12px;box-shadow:none;}
+.mo > div,.campus-calendar .mo > div {background:var(--card);border-color:var(--line);color:var(--ink);}
+.mo > div:hover,.campus-calendar .mo > div:hover {background:var(--acc);}
+.mo .td,.campus-calendar .mo .td {background:var(--acc);outline:2px solid var(--pri);outline-offset:-2px;box-shadow:none;}
+.mo u {background:var(--acc)!important;color:var(--ink);}
+.wk {gap:10px;}.wk > div {background:var(--card);border:1px solid var(--line);border-radius:12px;}
+.wk > div > b {padding:12px 0;color:var(--ink);}
+.grid {background:var(--card);border:1px solid var(--line);border-radius:12px;}
+.grid i {color:var(--mut);border-color:var(--line);padding-left:5px;}
+.all-day-events {background:var(--card);border-color:var(--line);}
+
+/* Summary: asymmetric color blocks with a clear content hierarchy. */
+.cb-hero {display:grid;grid-template-columns:minmax(0,1.4fr) minmax(230px,1fr);gap:20px;margin-bottom:24px;}
+.cb-welcome {background:var(--cb-cobalt);color:#fff;border-radius:22px;padding:28px 30px;position:relative;overflow:hidden;}
+.cb-welcome h2 {font-size:clamp(27px,3.2vw,42px);font-weight:800;letter-spacing:-1.4px;line-height:1.13;text-transform:none;margin:8px 0 12px;color:#fff;position:relative;z-index:1;}
+.cb-welcome p {position:relative;z-index:1;margin-bottom:0;}
+.cb-welcome .cb-eyebrow {color:#fff;}
+.cb-hero-shape {position:absolute;width:140px;height:140px;background:#7c93ff;border-radius:100% 0 0 0;right:-28px;bottom:-45px;transform:rotate(-20deg);opacity:.6;}
+.cb-stat {background:var(--cb-lilac);color:var(--ink);border-radius:22px;padding:26px 30px;position:relative;overflow:hidden;display:flex;flex-wrap:wrap;align-items:baseline;gap:0 12px;}
+.cb-stat::after {content:"";position:absolute;right:-42px;bottom:-45px;width:135px;height:135px;background:var(--cb-orange);border-radius:50%;}
+.cb-stat > * {position:relative;z-index:1;}.cb-stat .cb-eyebrow {flex-basis:100%;}.cb-stat strong {font-size:64px;line-height:1;letter-spacing:-4px;}.cb-stat > span:not(.cb-eyebrow) {font-size:18px;font-weight:700;}.cb-stat small {flex-basis:100%;margin-top:12px;font-size:13px;}
+.cb-summary-grid {display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(210px,.8fr);gap:20px;align-items:start;}
+.cb-panel {background:var(--card);border:1px solid var(--ink);border-radius:18px;padding:22px;box-shadow:var(--cb-shadow);min-width:0;}
+.cb-panel-heading {display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+.cb-panel-heading h2 {font-size:20px;letter-spacing:-.7px;text-transform:none;margin:0;line-height:1.25;}
+.cb-panel-heading svg {width:22px;height:22px;}
+.cb-count {font-size:11px;white-space:nowrap;border:1px solid var(--line);border-radius:7px;padding:4px 7px;font-weight:650;}
+.cb-panel-intro {font-size:12px;color:var(--mut);margin:8px 0 18px;}
+.cb-task-panel .row {border:0;border-bottom:1px solid var(--line);border-radius:0;padding:8px 0;margin:0;background:transparent;}
+.cb-task-panel .cb-priority {max-width:65px;white-space:normal;}
+.cb-task-panel .cb-item-title {font-size:13px;font-weight:600;}
+.cb-schedule-panel .row {border:0;border-bottom:1px solid var(--line);border-radius:0;padding:14px 0;background:transparent;align-items:flex-start;}
+.cb-schedule-panel .row b {font-size:13px;}
+.cb-upcoming-panel {background:var(--cb-orange);color:#172039;}
+.cb-upcoming-panel h2,.cb-upcoming-panel .cb-panel-intro {color:#172039;}
+.cb-upcoming-item {width:100%;display:block;border:0;border-bottom:1px solid #88532d;background:transparent;color:#172039;text-align:left;padding:14px 0;cursor:pointer;min-height:60px;}
+.cb-upcoming-item span {display:block;font-size:11px;font-weight:600;margin-bottom:5px;}
+.cb-upcoming-item strong {font-size:13px;line-height:1.4;display:block;overflow-wrap:anywhere;}
+.cb-text-link {display:flex;align-items:center;justify-content:space-between;min-height:44px;margin-top:14px;color:var(--pri);font-size:13px;font-weight:750;text-decoration:underline;text-underline-offset:4px;}
+.cb-empty {padding:28px 0;font-size:17px;font-weight:700;}.cb-empty small {display:block;color:var(--mut);font-size:13px;font-weight:400;margin-top:8px;}
+.cb-reminders {margin-top:24px;border-color:var(--line);}
+.cb-reminders details {border:0;padding:0;}
+.cb-reminders summary {font-size:15px;}.cb-reminders .cb-count {margin-left:10px;}
+.cb-reminder-item {display:block;width:100%;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);text-align:left;padding:12px 0;min-height:50px;cursor:pointer;font:inherit;font-size:13px;}
+.cb-reminder-item span {display:block;color:var(--mut);font-size:11px;}
+
+/* Authentication: all existing field IDs and validation are retained. */
+#app[data-page="login"],#app[data-page="confirm-email"] {display:block;height:100dvh;overflow:auto;background:var(--bg);}
+#app .main.login.cb-auth {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);width:min(1120px,calc(100% - 64px));max-width:none;margin:44px auto;padding:0;overflow:hidden;background:var(--card);border:1px solid var(--ink);border-radius:26px;box-shadow:8px 8px 0 var(--cb-lilac);min-height:650px;}
+.cb-auth-story {background:var(--cb-cobalt);color:#fff;padding:40px;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;}
+.cb-auth-brand {font-size:19px;font-weight:900;letter-spacing:-.6px;color:#fff;margin-bottom:100px;position:relative;z-index:1;}
+.cb-auth-story h2 {color:#fff;font-size:clamp(36px,4.4vw,58px);font-weight:800;line-height:1.03;letter-spacing:-2.4px;text-transform:none;margin:12px 0 24px;position:relative;z-index:1;}
+.cb-auth-story h2 em {font-style:normal;color:#ffbc87;}
+.cb-auth-story > p:not(.cb-eyebrow) {max-width:310px;font-size:15px;line-height:1.7;position:relative;z-index:1;}
+.cb-auth-story small {margin-top:auto;padding-top:60px;font-size:12px;position:relative;z-index:1;}
+.cb-auth-orbit {position:absolute;width:230px;height:230px;right:-100px;top:40px;border:50px solid #8298ff;border-radius:50%;opacity:.6;}
+.cb-auth-tags {display:flex;gap:8px;margin-top:16px;position:relative;z-index:1;}.cb-auth-tags span {border:1px solid #b7c4ff;border-radius:7px;padding:5px 12px;font-size:12px;}
+.cb-auth-form {padding:44px;min-width:0;}.cb-auth-form h1 {font-size:36px;letter-spacing:-1.3px;line-height:1.15;margin:10px 0;}
+.cb-auth-form > .cb-eyebrow {color:var(--pri);}.cb-auth-intro {color:var(--mut);margin-bottom:28px;font-size:14px;}
+.cb-auth-form .seg {max-width:none;margin-bottom:22px;}.cb-auth-form .seg a {font-size:13px;}
+.cb-auth-form .btn {margin-top:16px;}
+.cb-auth-form h2 {padding-top:18px;border-top:1px solid var(--line);margin-top:24px;}
+.cb-auth-footer {font-size:11px;color:var(--mut);margin:26px 0 0;}
+#app[data-page="confirm-email"] .login {background:var(--card);border:1px solid var(--ink);border-radius:24px;max-width:540px;margin:48px auto;box-shadow:7px 7px 0 var(--cb-lilac);}
+.welcome-note,.welcome-icon {background:var(--acc);color:var(--ink);}.welcome-copy {color:var(--mut);}
+
+/* Small screens: retain the existing mobile viewport/safe-area behavior. */
+@media(min-width:761px) and (max-width:1250px) {
+  #app {grid-template-columns:205px minmax(0,1fr);}
+  #app > .main,#app[data-page="summary"] .main,#app[data-page="todo"] .main,#app[data-page="discovery"] .main {padding-inline:24px;}
+  .cb-summary-grid {grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);}
+  .cb-upcoming-panel {grid-column:1/-1;}.cb-upcoming-item {display:inline-block;width:calc(50% - 12px);vertical-align:top;margin-right:12px;}
+}
+@media(max-width:760px) {
+  #app {grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "main" "nav";grid-template-rows:auto minmax(0,1fr) auto;}
+  #app > .top {padding:18px 16px;min-height:98px;gap:10px;}
+  .cb-subtitle {font-size:12px;}.cb-page-heading > .cb-eyebrow {font-size:9px;}.top h1 {font-size:24px;letter-spacing:-.8px;}
+  .cb-top-actions {gap:6px;}.ic {border-radius:12px;}
+  #app > .nav,#app.mobile-dashboard > .nav {position:fixed;inset:auto 0 0;display:flex;flex-direction:row;align-items:center;justify-content:space-around;gap:2px;overflow:visible;padding:6px 5px calc(6px + env(safe-area-inset-bottom,0px));background:var(--card);border:0;border-top:1px solid var(--line);min-height:68px;z-index:50;}
+  .nav .cb-brand,.cb-sidebar-note,.nav .cb-sidebar-profile {display:none!important;}
+  #app .nav a.cb-nav-link {display:flex;flex-direction:column;justify-content:center;gap:3px;padding:6px 3px;border-radius:10px;font-size:10px;min-height:50px;flex:1;}
+  .cb-nav-link svg {width:19px;height:19px;flex-basis:19px;}
+  #app > .main,#app[data-page="summary"] .main,#app[data-page="todo"] .main,#app[data-page="discovery"] .main,#app[data-page="add"] .main,#app[data-page="settings"] .main,#app[data-page="profile"] .main {padding:20px 16px 140px;}
+  #app.mobile-dashboard > .fab {bottom:calc(82px + env(safe-area-inset-bottom,0px));right:18px;}
+  .cb-hero {grid-template-columns:1fr;gap:12px;margin-bottom:16px;}.cb-welcome {padding:24px;}.cb-welcome h2 {font-size:34px;}
+  .cb-stat {padding:20px 24px;border-radius:18px;}.cb-stat strong {font-size:48px;}.cb-stat small {margin-top:7px;}
+  .cb-summary-grid {grid-template-columns:1fr;gap:16px;}.cb-panel {padding:20px;}.cb-panel-heading h2 {font-size:21px;}
+  .cb-upcoming-item {display:block;width:100%;margin-right:0;}
+  .wk {gap:3px;}.wk > div {padding:3px;}.wk > div > b {font-size:11px;}.wk span {font-size:10px;}
+  .mo {padding:3px;}.mo > div {min-height:68px;padding:4px;}
+  .sw {padding:13px;}.sw select {width:125px;}#discovery-interests {grid-template-columns:1fr;}
+  #app .main.login.cb-auth {width:calc(100% - 28px);margin:16px auto 30px;grid-template-columns:1fr;min-height:0;border-radius:20px;}
+  .cb-auth-story {padding:26px;}.cb-auth-brand {margin-bottom:30px;font-size:17px;}.cb-auth-story h2 {font-size:38px;letter-spacing:-1.4px;}.cb-auth-story h2 br {display:none;}.cb-auth-story h2 br::after {content:' ';}.cb-auth-story h2 {max-width:340px;}
+  .cb-auth-story > p:not(.cb-eyebrow) {font-size:13px;margin-bottom:8px;}.cb-auth-tags,.cb-auth-story small {display:none;}
+  .cb-auth-form {padding:28px 24px;}.cb-auth-form h1 {font-size:29px;}.cb-auth-orbit {width:150px;height:150px;right:-75px;top:55px;border-width:30px;}
+  #app[data-page="confirm-email"] .login {width:calc(100% - 32px);margin:24px auto;padding:30px 22px;}
+}
+@media(prefers-reduced-motion:reduce) {*,*::before,*::after {animation:none!important;transition:none!important;scroll-behavior:auto!important;}}
+
+/* Contrast: adjacent-month dates and completed items remain readable. */
+.mo .x {opacity:1;color:var(--mut);}
+.wk span {opacity:1!important;}
+[data-theme="dark"] .fab {background:#ffab63;color:#172039;}
+[data-theme="dark"] .cb-upcoming-panel {background:#ffab63;}
     </style>
   </head>
   <body>
-    <div id="app"></div>
-    <div id="toast"></div>
+    <a class="cb-skip" href="#main-content">Skip to main content</a>
+    <div id="app" data-page="login">
+      <!-- Immediate branded loading view: paint before the authentication SDK arrives. -->
+      <main id="main-content" class="main login cb-auth" tabindex="-1">
+        <aside class="cb-auth-story" aria-label="Welcome to The Daily Blend">
+          <a class="cb-auth-brand" href="#login">THE DAILY BLEND</a>
+          <span class="cb-auth-orbit" aria-hidden="true"></span>
+          <p class="cb-eyebrow">LESS JUGGLING. MORE LIVING.</p>
+          <h2>All your plans.<br>A little more<br><em>possibility.</em></h2>
+          <p>Classes, deadlines, and everything in between. One space to bring your day together.</p>
+          <div class="cb-auth-tags"><span>School</span><span>Life</span><span>You</span></div>
+          <small>Built for the rhythm of student life.</small>
+        </aside>
+        <section class="cb-auth-form">
+          <p class="cb-eyebrow">MAKE YOURSELF AT HOME</p>
+          <h1>Welcome back.</h1>
+          <p class="cb-auth-intro">Your plans are ready when you are.</p>
+          <p role="status" aria-live="polite">Preparing your planner…</p>
+        </section>
+      </main>
+    </div>
+    <div id="toast" role="status" aria-live="polite"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
       /* =====================================================================
@@ -2663,6 +2920,8 @@ body:has(#auth) {
       /* ============ DATA LAYER: every Supabase call lives here ============
    Table/column names below follow your ERD. At startup the app checks them against
    your real Supabase tables and adapts to upper/lower-case differences automatically. */
+
+      /* DATABASE MAPPING — existing Supabase table and column adapters */
       const ERD = {
         users: {
           t: "User",
@@ -3373,6 +3632,8 @@ body:has(#auth) {
         toast("Demo mode: nothing is saved");
         go("summary");
       }
+
+      /* ACCOUNT SESSION — original authentication and profile initialization */
       async function startSession(user) {
         S = init();
         S.uid = user.id;
@@ -3625,17 +3886,28 @@ function profileInitial() {
   return esc(initial.toUpperCase());
 }
 
-function shell(title, body, o = {}) {
-  return `<div class="top">${o.left || '<a class="ic" href="#settings">☰</a>'}<h1>${title}</h1>${o.right || `<a class="ic" href="#profile" aria-label="Open profile">${S.photo ? `<img src="${esc(S.photo)}" alt="">` : profileInitial()}</a>`}</div>
-  <div class="main">${body}</div>
-  ${o.fab ? '<button class="fab" onclick="newItem()" aria-label="Add task or event">+ Add</button>' : ""}
-  ${o.nav ? `<nav class="nav">
-    <a class="${o.nav == "s" ? "on" : ""}" href="#summary">📊 Summary</a>
-    <a class="${o.nav == "c" ? "on" : ""}" href="#day">📅 Calendar</a>
-    <a class="${o.nav == "t" ? "on" : ""}" href="#todo">✅ To-Do</a>
-    <a class="${o.nav == "d" ? "on" : ""}" href="#discovery">🔎 Discovery</a>
-  </nav>` : ""}`;
+/* COLORBLOCK STUDIO — shared shell. Routes and action handlers stay unchanged. */
+function cbIcon(name) {
+  const paths = {
+    summary: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>',
+    todo: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m7 12 3 3 7-7"/>',
+    discovery: '<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+  };
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (paths[name] || paths.calendar) + '</svg>';
 }
+function shell(title, body, o = {}) {
+  const route = (location.hash || '#summary').slice(1);
+  const subtitle = {summary:'A little structure. A lot more possibility.',day:'Make room for what matters.',week:'Your week, with a little breathing room.',month:'See the bigger picture.',todo:'One thing at a time. You have this.',discovery:'Find your next good thing.',settings:'Make this space your own.',profile:'The person behind the plans.',add:'Give your plans a place to land.'}[route] || 'Your day, beautifully in balance.';
+  const links = [['s','summary','Summary','summary'],['c','day','Calendar','calendar'],['t','todo','To-Do','todo'],['d','discovery','Discovery','discovery'],['settings','settings','Settings','settings']];
+  return `<header class="top"><div class="cb-page-heading"><p class="cb-eyebrow">YOUR DAILY BLEND</p><h1>${title}</h1><p class="cb-subtitle">${subtitle}</p></div><div class="cb-top-actions">${o.left || '<a class="ic" href="#settings" aria-label="Open settings">' + cbIcon('settings') + '</a>'}${o.right || `<a class="ic cb-profile-link" href="#profile" aria-label="Open profile">${S.photo ? `<img src="${esc(S.photo)}" alt="">` : profileInitial()}</a>`}</div></header>
+    <main id="main-content" class="main" tabindex="-1">${body}</main>
+    ${o.fab ? '<button class="fab" onclick="newItem()" aria-label="Add task or event">' + cbIcon('plus') + ' Add new</button>' : ''}
+    ${o.nav ? `<nav class="nav" aria-label="Main navigation"><a class="cb-brand" href="#summary" aria-label="The Daily Blend home"><span class="cb-brand-mark" aria-hidden="true"></span><span>THE DAILY<br>BLEND<span class="cb-brand-caption">A little more together.</span></span></a>${links.map(([key,href,label,icon]) => {const active = key === 'settings' ? route === 'settings' : o.nav === key && route !== 'settings';return `<a class="cb-nav-link ${active ? 'on' : ''}" href="#${href}" ${active ? 'aria-current="page"' : ''}>${cbIcon(icon)}<span>${label}</span></a>`;}).join('')}<div class="cb-sidebar-note"><span class="cb-note-shape" aria-hidden="true"></span><strong>Big plans.<br>Small steps.</strong><span>School, life, and a little space for you.</span></div><a class="cb-sidebar-profile" href="#profile"><span class="cb-avatar">${profileInitial()}</span><span>${esc(S.prof.name || 'Your account')}<small>Profile & account</small></span></a></nav>` : ''}`;
+}
+
 const seg = (v) =>
   `<div class="seg">${["day", "week", "month"]
     .map((x) =>
@@ -3668,7 +3940,8 @@ const newItem = (k) => {
         return ad(d, -df);
       };
       const trow = (i) =>
-        `<div class="row ${i.done ? "done" : ""}"><input type="checkbox" ${i.done ? "checked" : ""} onclick="event.stopPropagation();tog('${i.id}')"><span class="t" onclick="openEv('${i.id}')">${esc(i.title)}</span><b class="p${i.pri}" title="${PN[i.pri]}">${PS[i.pri]}</b></div>`;
+        `<div class="row cb-task-row ${i.done ? 'done' : ''}"><input type="checkbox" aria-label="Mark ${esc(i.title)} complete" ${i.done ? 'checked' : ''} onclick="event.stopPropagation();tog('${i.id}')"><button class="t cb-item-title" type="button" onclick="openEv('${i.id}')">${esc(i.title)}<small>${esc(typeInfo(ty(i.type))[0])}</small></button><b class="p${i.pri} cb-priority" title="${PN[i.pri]}">${esc(PN[i.pri])}</b></div>`;
+
       const itemBusy = new Set();
       async function tog(id) {
         if (itemBusy.has(id)) return;
@@ -3685,7 +3958,7 @@ const newItem = (k) => {
       let pendingEmail =
         sessionStorage.getItem("scheduler_pending_email") || "";
       function confirmEmail() {
-        return `<main class="main login" aria-labelledby="confirm-title">
+        return `<main id="main-content" class="main login" tabindex="-1" aria-labelledby="confirm-title">
           <div class="welcome-icon" aria-hidden="true">💌</div>
           <p class="welcome-kicker">A little less chaos. A little more you.</p>
           <h1 id="confirm-title">Almost there!</h1>
@@ -3700,7 +3973,7 @@ const newItem = (k) => {
       }
       function login() {
         const c = LM === "up";
-        return `<div class="main login"><div class="av">👤</div><h1>The Daily Blend</h1>
+        return `<main id="main-content" class="main login cb-auth" tabindex="-1"><aside class="cb-auth-story" aria-label="Welcome to The Daily Blend"><a class="cb-auth-brand" href="#login">THE DAILY BLEND</a><span class="cb-auth-orbit" aria-hidden="true"></span><p class="cb-eyebrow">LESS JUGGLING. MORE LIVING.</p><h2>All your plans.<br>A little more<br><em>possibility.</em></h2><p>Classes, deadlines, and everything in between. One space to bring your day together.</p><div class="cb-auth-tags"><span>School</span><span>Life</span><span>You</span></div><small>Built for the rhythm of student life.</small></aside><section class="cb-auth-form"><p class="cb-eyebrow">MAKE YOURSELF AT HOME</p><h1>${c ? "Your next chapter." : "Welcome back."}</h1><p class="cb-auth-intro">${c ? "A fresh start for a more balanced day." : "Your plans are ready when you are."}</p>
 ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the setup guide for missing tables or columns, then reload. If birth_date is missing, run tasks-events-update.sql.</div>` : ""}
 <div class="seg"><a href="#login" class="${c ? "" : "on"}" onclick="LM='in';r()">Log in</a><a href="#login" class="${c ? "on" : ""}" onclick="LM='up';r()">Create account</a></div>
 <form id="auth-form" ${c ? "novalidate" : ""} onsubmit="event.preventDefault();auth()">${c ? '<p class="signup-note">Only Full name, Email address, and Password are required. You can add everything else later in your profile.</p>' : ""}${c ? `<label for="su-name">Full name <span class="required-star" aria-hidden="true">*</span> <small class="required-label">Required</small></label><input id="su-name" type="text" maxlength="50" required autocomplete="name" aria-describedby="su-name-help" oninput="chk()"><small id="su-name-help" class="signup-field-help">Up to 50 characters. Use letters, spaces, hyphens, and apostrophes.</small>
@@ -3763,7 +4036,7 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
     <li>Copy that feed URL and paste it above.</li>
   </ol>
   <p>
-    Start with one course. Support for adding more course links is coming later.
+    Start with one course. Add more course links anytime in Settings.
     Use the feed URL, rather than the course page address.
   </p>
 </details>
@@ -3772,7 +4045,7 @@ ${DBERR.length ? `<div class="err">${DBERR.map(esc).join("<br>")}<br>Check the s
 <label for="pw">Password${c ? ' <span class="required-star" aria-hidden="true">*</span> <small class="required-label">Required</small>' : ""}</label><input id="pw" type="password" required minlength="${c ? 8 : 1}" autocomplete="${c ? "new-password" : "current-password"}" oninput="chk()">
 <label style="display:flex;gap:8px;align-items:center"><input id="st" type="checkbox" ${remember ? "checked" : ""}> Stay logged in</label>
 <div id="er" class="err" role="status" aria-live="polite"></div><button class="btn ${c ? "is-incomplete" : ""}" id="go" ${c ? "" : "disabled"}>${c ? "Create account" : "Log in"}</button></form>
-${!useSB ? "<p>Live login requires your Supabase URL and public key.</p>" : ""}</div>`;
+${!useSB ? "<p>Live login requires your Supabase URL and public key.</p>" : ""}<p class="cb-auth-footer">The Daily Blend · Your day, beautifully in balance.</p></section></main>`;
       }
       // Accept accented letters, spaces, hyphens, and apostrophes in full names.
       function validSignupName(value) {
@@ -3927,59 +4200,34 @@ ${!useSB ? "<p>Live login requires your Supabase URL and public key.</p>" : ""}<
           }
         }
       }
+/* Summary: use the same task/event sources and completion handlers as the calendar. */
       function summary() {
-        const n = S.items.filter(
-            (i) =>
-              i.date === TODAY &&
-              i.kind == "task" &&
-              i.type == "school" &&
-              !i.done,
-          ).length,
-          s = evs(TODAY).filter((e) => e.type == "social").length,
-          now = new Date(),
-          nm = now.getHours() * 60 + now.getMinutes();
-        const rem = [];
-        if (S.set.notif) {
-          [...on(TODAY), ...S.items.filter((i) => i.kind === "task" && i.date === ad(TODAY, 1))].forEach((i) => {
-            if (i.done) return;
-            if (
-              i.kind == "task" &&
-              i.type == "school" &&
-              (i.date == TODAY || i.date == ad(TODAY, 1))
-            )
-              rem.push(`📚 ${esc(i.title)} is due within 24 hours`);
-            if (
-              i.kind == "event" &&
-              !i.allDay && i.type == "social" &&
-              i.date == TODAY &&
-              mins(i.time) > nm &&
-              mins(i.time) - nm <= 240
-            )
-              rem.push(`🎉 ${esc(i.title)} starts in under 4 hours`);
-          });
-        }
-        return shell(
-          L(TODAY, { month: "short", day: "numeric" }) + " Summary",
-          `<div style="text-align:center;font-size:18px;line-height:1.7;margin:18px 0">You have <b class="p1">${n}</b> homework assignment${n == 1 ? "" : "s"} due.<br>You have <b class="p2">${s}</b> social ${s == 1 ? "activity" : "activities"} today.</div>
-${rem.length ? `<h2>Reminders</h2>${rem.map((x) => `<div class="rem">${x}</div>`).join("")}` : ""}<h2>Today's schedule</h2>${
-            evs(TODAY)
-              .map((e) => evRow(e))
-              .join("") || "<small>No events today.</small>"
-          }<h2>Today's tasks</h2>${tasks(TODAY).map(trow).join("") || "<small>No tasks today.</small>"}`,
-          { nav: "s", fab: 1 },
-        );
+        const todayTasks = tasks(TODAY);
+        const pending = todayTasks.filter(item => !item.done);
+        const todayEvents = evs(TODAY);
+        const social = todayEvents.filter(item => item.type === 'social').length;
+        const nextTasks = Array.from({length:7}, (_,i) => ad(TODAY,i+1)).flatMap(date => tasks(date)).filter(item => !item.done).slice(0,5);
+        const currentTime = new Date();
+        const currentMinute = currentTime.getHours() * 60 + currentTime.getMinutes();
+        const reminders = S.set.notif ? [
+          ...pending.filter(item => item.type === 'school'),
+          ...tasks(ad(TODAY,1)).filter(item => !item.done && item.type === 'school'),
+          ...todayEvents.filter(item => !item.allDay && item.type === 'social' && mins(item.time) > currentMinute && mins(item.time) - currentMinute <= 240),
+        ] : [];
+        const firstName = (S.prof.name || '').trim().split(' ')[0] || 'friend';
+        return shell('Your day, in focus.', `
+          <section class="cb-hero" aria-label="Daily overview"><div class="cb-welcome"><p class="cb-eyebrow">A FRESH PERSPECTIVE</p><h2>Hello, ${esc(firstName)}.</h2><p>${L(TODAY,{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</p><span class="cb-hero-shape" aria-hidden="true"></span></div><div class="cb-stat"><span class="cb-eyebrow">ON YOUR RADAR</span><strong>${pending.length}</strong><span>tasks due today</span><small>${todayEvents.length} events · ${social} social plans</small></div></section>
+          <div class="cb-summary-grid"><section class="cb-panel cb-task-panel"><header class="cb-panel-heading"><h2>Tasks due today</h2><span class="cb-count">${pending.length} remaining</span></header><p class="cb-panel-intro">Make progress, one checkbox at a time.</p>${todayTasks.map(trow).join('') || '<div class="cb-empty">A little breathing room.<small>No tasks due today.</small></div>'}<a class="cb-text-link" href="#todo">Open your to-do list <span aria-hidden="true">↗</span></a></section>
+          <section class="cb-panel cb-schedule-panel"><header class="cb-panel-heading"><h2>Today's schedule</h2>${cbIcon('calendar')}</header>${todayEvents.map(evRow).join('') || '<div class="cb-empty">An open canvas.<small>No events scheduled today.</small></div>'}<a class="cb-text-link" href="#day" onclick="D=TODAY">View calendar <span aria-hidden="true">↗</span></a></section>
+          <section class="cb-panel cb-upcoming-panel"><header class="cb-panel-heading"><h2>Coming up</h2>${cbIcon('todo')}</header>${nextTasks.map(item => `<button class="cb-upcoming-item" type="button" onclick="openEv('${item.id}')"><span>${L(item.date,{weekday:'short',month:'short',day:'numeric'})}</span><strong>${esc(item.title)}</strong></button>`).join('') || '<p class="cb-panel-intro">Your next seven days are clear of tasks.</p>'}</section></div>
+          ${reminders.length ? `<section class="cb-panel cb-reminders"><details><summary>Your reminders <span class="cb-count">${reminders.length}</span></summary><p class="cb-panel-intro">School deadlines and social plans coming up soon.</p>${reminders.map(item => `<button class="cb-reminder-item" type="button" onclick="openEv('${item.id}')">${esc(item.title)}<span>${item.kind === 'event' ? 'Starts at ' + t12(item.time) : (item.date === TODAY ? 'Due today' : 'Due tomorrow')}</span></button>`).join('')}</details></section>` : ''}`, {nav:'s',fab:1});
       }
+
       const evRow = (e) =>
-  `<div class="row" onclick="openEv('${e.id}')">
-    <span class="dot" style="background:${e.color || typeInfo(e.type)[1]}"></span>
-    <span class="t">
-      <b>${esc(e.title)}</b>
-      <small>
-        ${e.allDay ? "" : t12(e.time) + (e.end ? "–" + t12(e.end) : "")}
-        ${e.loc ? (e.allDay ? "" : " · ") + esc(e.loc) : ""}
-      </small>
-    </span>
-  </div>`;
+        `<button type="button" class="row cb-event-row" onclick="openEv('${e.id}')"><span class="cb-event-time">${e.allDay ? 'All day' : t12(e.time)}</span><span class="t"><b>${esc(e.title)}</b><small>${e.allDay ? 'All-day event' : (e.end ? 'Until ' + t12(e.end) : 'Scheduled event')}${e.loc ? ' · ' + esc(e.loc) : ''}</small></span></button>`;
+
+
+      /* CALENDAR VIEWS — existing dates, repeats, holidays, and event actions */
       function day() {
         const ev = evs(D);
         const allDayEvents = ev.filter((e) => e.allDay);
@@ -5082,9 +5330,9 @@ return `
 
 
       const tgl = (k) =>
-        `<button class="tog ${S.set[k] ? "on" : ""}" role="switch" aria-checked="${!!S.set[k]}" onclick="setS('${k}',!S.set.${k})"></button>`;
+        `<button class="tog ${S.set[k] ? "on" : ""}" aria-label="${({notif:"Notifications",sug:"In-calendar suggestions"})[k] || k}" role="switch" aria-checked="${!!S.set[k]}" onclick="setS('${k}',!S.set.${k})"></button>`;
       const sel = (k, o) =>
-        `<select onchange="setS('${k}',this.value)">${o.map(([v, n]) => `<option value="${v}" ${S.set[k] == v ? "selected" : ""}>${n}</option>`).join("")}</select>`;
+        `<select aria-label="${({view:"Default view",wk:"Week starts on",theme:"Theme"})[k] || k}" onchange="setS('${k}',this.value)">${o.map(([v, n]) => `<option value="${v}" ${S.set[k] == v ? "selected" : ""}>${n}</option>`).join("")}</select>`;
       function setS(k, v) {
         S.set[k] = k == "wk" ? +v : v;
         save();
@@ -5092,6 +5340,8 @@ return `
         if (k == "notif") toast(v ? "Notifications on" : "Notifications off");
         r();
       }
+
+      /* SETTINGS — preferences and existing calendar connections */
       function sett() {
         return shell(
           "Settings",
@@ -5820,6 +6070,8 @@ function loadDiscoveryInterests() {
           ).join("")}</div>
         </section>`;
       }
+
+      /* PROFILE — existing account editing and photo controls */
       function prof() {
         const p = S.prof;
         const fields = PROFILE_FIELDS.map(([field, label]) => {
@@ -5883,6 +6135,8 @@ function loadDiscoveryInterests() {
         $("#delete-dialog")?.remove();
         deleteStep = 0;
       }
+
+      /* ACCOUNT DELETION — original server-side deletion flow */
       async function deleteAccount() {
         if (deleteBusy || deleteStep !== 2 || !$("#delete-dialog")) return;
         deleteBusy = true;
@@ -6478,6 +6732,35 @@ function loadDiscoveryInterests() {
         if (page === "todo") void logActivityVisit("tasks_viewed");
       }
 
+/* Accessibility enhancements for legacy inline click targets. */
+function cbEnhanceAccessibility(route) {
+  // Contrast adapts to custom event colors without changing the saved color.
+  document.querySelectorAll('.ev, .wk span[onclick], [style*="background"][onclick]').forEach(el => {
+    const rgb = getComputedStyle(el).backgroundColor.match(/\d+(?:\.\d+)?/g);
+    if (!rgb || rgb.length < 3 || (rgb.length > 3 && Number(rgb[3]) === 0)) return;
+    const linear = rgb.slice(0,3).map(v => {
+      const s = Number(v)/255;
+      return s <= 0.04045 ? s/12.92 : Math.pow((s+0.055)/1.055,2.4);
+    });
+    const luminance = linear[0]*0.2126 + linear[1]*0.7152 + linear[2]*0.0722;
+    el.style.color = luminance > 0.179 ? '#000000' : '#ffffff';
+  });
+  document.title = 'The Daily Blend | ' + ({login:'Welcome',summary:'Summary',todo:'To-Do',day:'Day calendar',week:'Week calendar',month:'Month calendar',settings:'Settings',profile:'Profile',discovery:'Discovery',add:'Add a plan','confirm-email':'Confirm email'}[route] || 'Student planner');
+  document.querySelectorAll('#app [onclick]').forEach(el => {
+    if (el.matches('button,a,input,select,textarea,label,summary') || el.closest('button,a')) return;
+    if (!el.querySelector('button,a,input,select,textarea')) {el.tabIndex = 0; el.setAttribute('role','button');}
+  });
+  document.querySelectorAll('#app input:not([type="hidden"]),#app select,#app textarea').forEach(el => {
+    if (el.getAttribute('aria-label') || el.getAttribute('aria-labelledby') || (el.labels && el.labels.length)) return;
+    const label = el.previousElementSibling;
+    el.setAttribute('aria-label', label?.tagName === 'LABEL' ? label.textContent.trim() : el.placeholder || el.name || 'Value');
+  });
+}
+document.addEventListener('keydown', event => {
+  if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[role="button"][onclick]:not(button):not(a)')) { event.preventDefault(); event.target.click(); }
+});
+
+      /* ROUTER — retain original page loaders, activity tracking, and mobile behavior */
 function r() {
   let h = (location.hash || "#login").slice(1);
 
@@ -6502,6 +6785,7 @@ function r() {
   document.documentElement.dataset.theme = S.set.theme;
   $("#app").dataset.page = h;
   $("#app").innerHTML = f();
+  cbEnhanceAccessibility(h);
   trackActivityPage(h);
 
   const hasMobileNavigation = !!$("#app > .nav");
