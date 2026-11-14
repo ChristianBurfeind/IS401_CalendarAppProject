@@ -6435,6 +6435,49 @@ function loadDiscoveryInterests() {
         }
       }
       
+      const activityPageKey = "scheduler_activity_page";
+      let activityUser = null;
+      let activityPage = null;
+
+      async function logActivityVisit(type) {
+        try {
+          const { error } = await sb.rpc("scheduler_log_visit", { visit_type: type });
+          if (error) console.warn("Could not record OKR activity:", error.message);
+        } catch (error) {
+          console.warn("Could not record OKR activity:", error);
+        }
+      }
+
+      function trackActivityPage(route) {
+        const user = live() && S.user ? S.uid : null;
+        if (!user) {
+          activityUser = null;
+          activityPage = null;
+          try { sessionStorage.removeItem(activityPageKey); } catch {}
+          return;
+        }
+
+        const page = ["day", "week", "month"].includes(route) ? "calendar" : route;
+        if (user !== activityUser) {
+          const isReload = performance.getEntriesByType("navigation")[0]?.type === "reload";
+          if (!activityUser && isReload) {
+            try {
+              const previous = JSON.parse(sessionStorage.getItem(activityPageKey));
+              if (previous?.user === user) activityPage = previous.page;
+            } catch {}
+          } else {
+            activityPage = null;
+          }
+          activityUser = user;
+          void logActivityVisit("app_opened");
+        }
+        if (page === activityPage) return;
+        activityPage = page;
+        try { sessionStorage.setItem(activityPageKey, JSON.stringify({ user, page })); } catch {}
+        if (page === "calendar") void logActivityVisit("calendar_viewed");
+        if (page === "todo") void logActivityVisit("tasks_viewed");
+      }
+
 function r() {
   let h = (location.hash || "#login").slice(1);
 
@@ -6459,6 +6502,7 @@ function r() {
   document.documentElement.dataset.theme = S.set.theme;
   $("#app").dataset.page = h;
   $("#app").innerHTML = f();
+  trackActivityPage(h);
 
   const hasMobileNavigation = !!$("#app > .nav");
 
@@ -6505,7 +6549,9 @@ function r() {
       // Refresh the birthday/age at local midnight without discarding unsaved form text.
       setInterval(updateBirthdayUI, 60000);
       document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) updateBirthdayUI();
+        if (document.hidden) return;
+        updateBirthdayUI();
+        if (live() && S.user && S.uid) void logActivityVisit("app_opened");
       });
       (async function boot() {
         $("#app").innerHTML =
